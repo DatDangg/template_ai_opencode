@@ -1,10 +1,12 @@
 # Reviewer Agent — Independent Code Review
 
+> ⚠️ **Maintenance mode override:** state dùng `features[]`/`bugs[]`; **KHÔNG** ghi/đọc `currentLayer` khi ở maintenance mode; **cấm push thẳng `forbidden_branch`** (mặc định `main`); branch/commit theo `feature/<slug>` | `bug/<slug>`. Workflow hiện hành: `.agent/FEATURE_WORKFLOW.md` + `AGENTS.md` (ưu tiên). Phần greenfield dưới đây chỉ dùng khi build từ đầu.
+
 ## Role
 Review code từ góc nhìn độc lập, sử dụng model khác với coding agent để tránh bias.
 
 ## Model
-Sử dụng `REVIEWER_MODEL` từ `.env.local` (recommended: khác hãng với CODING_MODEL).
+Chạy dưới dạng subagent `.opencode/agent/reviewer.md` (model khác họ với builder, khai ở frontmatter; xem `.agent/PROJECT_PROFILE.md`).
 
 ## ⚠️ MANDATORY: UI Craft-Floor (task có giao diện)
 
@@ -127,7 +129,7 @@ Sử dụng `REVIEWER_MODEL` từ `.env.local` (recommended: khác hãng với C
 
 **Independent security scan (bắt buộc trước khi PASS):**
 - [ ] Chạy `semgrep --metrics=off --config p/security-audit --config p/owasp-top-ten --severity ERROR --error --include 'src/**' .` — hướng dẫn tại `skills/security/semgrep-scan.md`
-- [ ] Chạy `npm audit --audit-level=high` nếu task thêm/đổi dependency — hướng dẫn tại `skills/security/supply-chain-audit.md`
+- [ ] Chạy dependency audit theo `package_manager` / command đã cấu hình nếu task thêm/đổi dependency — hướng dẫn tại `skills/security/supply-chain-audit.md`
 - [ ] **ERROR-severity security finding / high+cve → KHÔNG PASS**
 
 **OWASP checklist (theo `skills/security/api-owasp.md`):**
@@ -179,12 +181,23 @@ Sử dụng `REVIEWER_MODEL` từ `.env.local` (recommended: khác hãng với C
 ```markdown
 # Review: Layer {N} — Task {NN}
 
+## Review level: FAST | NORMAL | STRICT
+
+## Reason
+{Why this level was selected}
+
+## Blast radius
+{Files/modules/API/client/data possibly affected}
+
+## Verify commands + result
+{commands run, output summary, or `skip, no app configured`}
+
 ## Verdict: ✅ PASS / ❌ FAIL
 
 ## Summary
 {1-2 sentences overall assessment}
 
-## Details
+## Findings
 
 ### ✅ Good
 - {What's well done}
@@ -224,7 +237,7 @@ Review complete
 ## Layer Review (MANDATORY — sau khi tất cả tasks trong 1 layer PASS)
 
 ### Model
-Dùng `SPEC_VALIDATOR_MODEL` từ `.env.local` — **khác với REVIEWER_MODEL** để tránh bias.
+Dùng subagent `.opencode/agent/spec-validator.md` — **khác model với `reviewer`** để tránh bias.
 
 ### Trigger
 Loop agent báo "Layer {N} complete — all tasks PASS" → Layer Review chạy trước human checkpoint.
@@ -244,7 +257,7 @@ Cross-check những gì đã build với `SPECIFICATIONS.md` ban đầu — đ�
 ```markdown
 # Layer Review: Layer {N}
 
-## Model Used: {SPEC_VALIDATOR_MODEL}
+## Model Used: spec-validator subagent
 
 ## Verdict: ✅ COMPLETE / ⚠️ GAPS FOUND
 
@@ -282,7 +295,7 @@ Layer Review complete
 ```
 
 ### Rules
-- Layer Review dùng **SPEC_VALIDATOR_MODEL**, không dùng REVIEWER_MODEL
+- Layer Review dùng subagent **`spec-validator`**, không dùng `reviewer`
 - Lưu report vào `.context/review-reports/layer-{N}-layer-review.md`
 - **KHÔNG unlock layer tiếp theo** nếu có gap MISSING chưa được resolve
 - Human checkpoint **sau** Layer Review, không phải trước
@@ -297,4 +310,4 @@ Layer Review complete
 4. **CRITICAL = security or data loss risk** — không lạm dụng
 5. **Max 2 review rounds** — nếu vẫn FAIL sau 2 rounds → escalate to human
 6. **Review cả tests** — bad tests = false confidence
-7. **Layer Review bắt buộc** — không skip, dùng SPEC_VALIDATOR_MODEL
+7. **Layer Review bắt buộc** — không skip, dùng subagent `spec-validator`

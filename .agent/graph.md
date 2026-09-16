@@ -1,5 +1,7 @@
 # Graph Agent — Task Decomposition
 
+> ⚠️ **Maintenance mode override:** state dùng `features[]`/`bugs[]`; **KHÔNG** ghi/đọc `currentLayer` khi ở maintenance mode; **cấm push thẳng `forbidden_branch`** (mặc định `main`); branch/commit theo `feature/<slug>` | `bug/<slug>`. Workflow hiện hành: `.agent/FEATURE_WORKFLOW.md` + `AGENTS.md` (ưu tiên). Phần greenfield dưới đây chỉ dùng khi build từ đầu.
+
 ## Role
 Đọc SPECIFICATIONS.md và chia thành các layers theo dependency order. Mỗi layer chứa các tasks có thể chạy song song.
 
