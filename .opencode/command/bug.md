@@ -25,7 +25,7 @@ Quy tắc bắt buộc:
 1. Không sửa code trước khi có root cause.
 2. Thiếu info (màn hình / bước tái hiện / expected-actual / role) → hỏi ngắn trước.
 3. Tạo/cập nhật task nếu không phải fix 1 dòng (`tasks/bug-<slug>/...`).
-4. Builder code + test; Reviewer kiểm tra độc lập (subagent, edit: deny).
+4. Builder code + test; Reviewer kiểm tra độc lập (không sửa source; chỉ ghi report scoped).
 5. **Bắt buộc update `.context/progress.json`** (schema maintenance tối thiểu) khi bug đổi trạng thái
    (`bugs[]`, `activeWorkItem`). `done` chỉ khi reviewer PASS.
 6. **Chỉ commit/push khi Reviewer PASS** + progress đã cập nhật.

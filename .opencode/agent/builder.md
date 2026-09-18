@@ -33,7 +33,7 @@ Quy tắc bắt buộc:
 - Chạy **đúng verify commands** trong profile trước khi báo xong. Không hardcode `npm`/`pnpm`/Prisma.
   Nếu project chưa cấu hình stack/app code → hỏi hoặc ghi `skip, no app configured`.
 - Ghi file đổi + kết quả test vào completion report.
-- **KHÔNG commit / push / deploy / mở PR**. Chỉ primary được commit sau khi Reviewer PASS + progress/history/report gate xong.
+- **KHÔNG commit / push / deploy / mở PR**. Chỉ primary được commit sau khi Reviewer PASS + progress/doc reconcile/report gate xong.
 - Tool Loop Guard: không chạy lặp cùng shell/search/read command y hệt quá 1 lần; không thử cùng giả thuyết quá 2 lần.
   Command/search empty hoặc non-zero thì ghi nhận và chuyển hướng. Bash permission denied thì **DỪNG NGAY**,
   không retry/đổi biến thể/vòng qua pipeline; chuyển Grep/Read hoặc ghi `Blocked`. Không xác minh được thì ghi
