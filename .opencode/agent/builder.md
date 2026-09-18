@@ -33,6 +33,19 @@ Quy tắc bắt buộc:
 - Chạy **đúng verify commands** trong profile trước khi báo xong. Không hardcode `npm`/`pnpm`/Prisma.
   Nếu project chưa cấu hình stack/app code → hỏi hoặc ghi `skip, no app configured`.
 - Ghi file đổi + kết quả test vào completion report.
+- Với bug task: **original repro còn tái hiện = chưa hoàn thành**. Không được trả `Task completed: yes`
+  nếu repro status là `FAIL`, `BLOCKED`, hoặc chưa verify. Phải tiếp tục diagnose/fix trong cùng task
+  cho tới khi repro status `PASS`, hoặc báo blocker thật kèm residual risk.
+- Với bug task, completion report bắt buộc có:
+  `Original repro`, `Expected`, `Actual before fix`, `Actual after fix`, `Evidence`,
+  `Status: PASS|FAIL|BLOCKED`.
+- Retry / Escalation Policy cho bug/feature/update:
+  - Attempt 1 fail: dùng Error Analyzer/root cause, fix tối thiểu.
+  - Attempt 2 fail: dừng patch triệu chứng; so với pattern code đang hoạt động và kiểm tra assumption.
+  - Attempt 3 fail: **KHÔNG thử fix #4**. Trả `Task completed: no`, status `BLOCKED` hoặc
+    `ARCHITECTURE_REVIEW_NEEDED`, kèm Structural Review: data flow, ownership/scope boundary,
+    API contract, permission/tenant/school filters, state/cache layer, mock/real data boundary,
+    schema/domain mismatch. Hỏi human hoặc đề xuất task refactor/design riêng.
 - **KHÔNG commit / push / deploy / mở PR**. Chỉ primary được commit sau khi Reviewer PASS + progress/doc reconcile/report gate xong.
 - Tool Loop Guard: không chạy lặp cùng shell/search/read command y hệt quá 1 lần; không thử cùng giả thuyết quá 2 lần.
   Command/search empty hoặc non-zero thì ghi nhận và chuyển hướng. Bash permission denied thì **DỪNG NGAY**,
@@ -42,5 +55,7 @@ Quy tắc bắt buộc:
 Trả về:
 - Task đã hoàn thành (yes/no), files create/modify, test đã thêm + kết quả check,
   giả định đã nêu, blocker (nếu có).
+- Với bug: task hoàn thành chỉ khi original repro đã PASS. Nếu chưa PASS, trả `yes/no = no`
+  và nêu bước debug tiếp theo thay vì báo xong.
 
 Bạn KHÔNG tự review code của mình — reviewer sẽ kiểm tra độc lập.

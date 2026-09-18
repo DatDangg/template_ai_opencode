@@ -57,6 +57,8 @@ Triage → Reproduce → Root cause → Task → Builder → Reviewer PASS
 ### 2.4 Task
 - Bug **1 dòng, rõ ràng, không risk** → có thể sửa trực tiếp (vẫn phải update progress nếu đổi trạng thái bug).
 - Còn lại → tạo `tasks/bug-<slug>/phase-<N>-task-<NN>.md` (format §5).
+- Task bug bắt buộc ghi `Classification / Risk`: severity (`blocker|high|medium|low`), scope,
+  root cause category, expected review level, blast radius, doc impact, decision impact.
 
 ### 2.5 Builder → Reviewer
 - Gọi subagent `builder` (hoặc `builder-strong` — xem §7) implement + test.
@@ -161,18 +163,34 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 ### 3.4 Phase / Task
 - Chia theo **Phase model** (§4), mỗi task: scope, inputs, outputs, acceptance criteria, deps.
 - File: `tasks/feature-<slug>/phase-<N>-task-<NN>.md`.
+- Task feature/update bắt buộc ghi `Classification / Risk`: change type, scope, expected review level,
+  blast radius, doc impact, decision impact.
 
 ### 3.5 Human duyệt plan
 - Trình danh sách phase + task + thứ tự. **Chờ user duyệt** mới code.
 
 ### 3.6 Loop
 - Mỗi task: builder implement+test → reviewer độc lập. FAIL → trả lại builder (max 2 vòng).
+- Test/check fail, acceptance criteria chưa đạt, hoặc behavior sau update chưa khớp spec delta → **chưa xong**;
+  quay lại builder cập nhật trong cùng task. Không được báo done chỉ vì đã edit code.
+- Retry / Escalation Policy:
+  - Attempt 1 fail: gọi/áp dụng Error Analyzer, xác định lại root cause, fix tối thiểu.
+  - Attempt 2 fail: dừng patch triệu chứng; so với pattern code đang hoạt động và kiểm tra lại assumption.
+  - Attempt 3 fail: **KHÔNG thử fix #4**. Set `blocked` / `ARCHITECTURE_REVIEW_NEEDED`, ghi rõ
+    blocker/residual risk/verify evidence, hỏi human thay vì tự đóng.
+  - Structural Review bắt buộc gồm: data flow, ownership/scope boundary, API contract,
+    permission/tenant/school filters, state/cache layer, mock/real data boundary, schema/domain mismatch.
+- Mỗi failed attempt phải append `.context/error-memory.md` hoặc ghi rõ vì sao không có entry.
+- Nếu fix/update đổi kiến trúc, ownership/scope boundary, API contract, hoặc mock/real data boundary
+  → append `.context/decisions.md`.
+- Task report bắt buộc có verification summary:
+  `Acceptance criteria: PASS|FAIL|BLOCKED`, `Verify commands + result`, `Reviewer verdict`.
 - **Không tự chạy task/phase tiếp theo** khi chưa qua checkpoint (§8).
 
 ### 3.7 Phase Review
 - Sau khi cả phase PASS: `spec-validator` cross-check "đã build đúng & đủ so với spec delta".
 - PASS → xác định Doc Impact & Reconcile (§6) trước khi phase done/checkpoint; không impact → ghi `no doc impact`.
-  GAP → quay lại bổ sung.
+  GAP/FAIL → quay lại bổ sung trong task/phase liên quan; không set phase `done`.
 
 ### 3.8 Nhánh "đầu vào là danh sách feature"
 - Tách **mỗi feature thành task/feature riêng**, chốt ưu tiên, xử lý **tuần tự**.
@@ -180,7 +198,9 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 
 ### 3.9 Progress (bắt buộc)
 - Update `.context/progress.json`: thêm/cập nhật entry trong `features[]`, set `activeWorkItem`.
-- Trước khi set feature/phase/task `done`, phải hoàn tất Doc Impact & Reconcile (§6) hoặc ghi `no doc impact`.
+- Trước khi set feature/phase/task `done`, phải có acceptance PASS, verify commands PASS/skip có lý do,
+  Reviewer PASS, Spec Validator PASS khi hết phase, và hoàn tất Doc Impact & Reconcile (§6) hoặc ghi `no doc impact`.
+- Nếu test/check/review/spec status là `FAIL`, `BLOCKED`, hoặc unknown → không set `done`.
 - Commit/push: xem §2.8 (chỉ khi PASS + `auto_commit_after_pass: true`, chỉ tới `target_branch`).
 
 ---
@@ -240,6 +260,9 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 ### Task
 - Feature: `tasks/feature-<slug>/phase-<N>-task-<NN>.md`
 - Bug: `tasks/bug-<slug>/phase-<N>-task-<NN>.md`
+- Trước khi Builder chạy, task phải có các block: `Classification / Risk`, `Acceptance Criteria`,
+  `Verification Plan`, `Retry / Error Memory`, `Doc / Decision Impact`.
+- Bug task phải có `Repro Verification`; feature/update task phải có `Feature Verification`.
 
 ### Review report
 - Reviewer report phải đúng tên: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-review.md`.

@@ -64,6 +64,8 @@ Tự chọn `FAST` / `NORMAL` / `STRICT` và ghi vào report. Mặc định `NOR
 
 Phạm vi review (tùy loại task):
 - **Requirements coverage**: acceptance criteria, edge cases, error states.
+- **Bug repro closure**: với bug task, phải kiểm tra `Repro Verification`. Nếu original repro chưa được
+  verify lại, status không phải `PASS`, hoặc evidence không chứng minh bug đã hết → Verdict bắt buộc `FAIL`.
 - **Code quality**: naming, DRY, không over-engineer, file ≤300 dòng / hàm ≤50 dòng.
 - **Security** (`skills/security/*`): input validation, SQLi, XSS, auth/BOLA-IDOR, JWT,
   secrets, CORS, rate limit, mass assignment, SSRF.
@@ -95,7 +97,8 @@ Trả về report:
 - Verify commands + result: lệnh đã chạy hoặc `skip, no app configured`
 - Findings: issues phân loại **[CRITICAL] / [MAJOR] / [MINOR]**, mỗi issue: file:line + cách fix đề xuất
 - Verdict: ✅ PASS / ❌ FAIL
-- PASS chỉ khi không còn CRITICAL/MAJOR. Ghi report vào `.context/review-reports/`.
+- PASS chỉ khi không còn CRITICAL/MAJOR **và**, với bug task, original repro status là `PASS` có evidence.
+  Ghi report vào `.context/review-reports/`.
 - Nếu subagent không ghi được report vì permission/runtime, primary phải persist nguyên văn report vào đúng path `.context/review-reports/`.
 
 Bạn KHÔNG được sửa code. Nếu FAIL → trả danh sách lỗi cho builder.

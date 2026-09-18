@@ -32,6 +32,17 @@ tasks/
 ## Type
 feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 
+## Classification / Risk
+- Work item type: BUG | FEATURE | UPDATE
+- Bug severity: blocker | high | medium | low | n/a
+- Feature change type: ADDITIVE | MODIFY | REMOVE | n/a
+- Scope: SINGLE_SURFACE | CROSS_CUTTING | SHARED_FOUNDATION
+- Root cause category: PERMISSION_SCOPE | TENANT_SCHOOL_BOUNDARY | API_CONTRACT | MOCK_REAL_DATA_BOUNDARY | STATE_CACHE | SCHEMA_DOMAIN | UI_LOGIC | CONFIG_ENV | RACE_TIMING | UNKNOWN | n/a
+- Review level expected: FAST | NORMAL | STRICT
+- Blast radius: <files/modules/API/client/data affected>
+- Doc impact: API_SPEC | ERD | DESIGN | PERMISSION | HISTORY | NO_DOC_IMPACT
+- Decision impact: YES | NO — if YES, append `.context/decisions.md`
+
 ## Phase
 <N>   # 1 Schema/domain · 2 Backend/API · 3 UI · 4 Integration · 5 Test/UAT
 
@@ -48,11 +59,45 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 - [ ] Tiêu chí đo được, testable
 - [ ] ...
 
+## Verification Plan
+- Commands: <from `.agent/PROJECT_PROFILE.md` or `skip, no app configured`>
+- Manual/UAT evidence: <if needed>
+- Reviewer report path: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-review.md`
+
+## Retry / Error Memory
+- Attempt: 0 | 1 | 2 | 3
+- Last failure type: test_failure | lint_error | build_error | review_fail | runtime_error | n/a
+- Error memory entry: `.context/error-memory.md#entry-...` | none
+- Escalation: NONE | ERROR_ANALYZER | ARCHITECTURE_REVIEW_NEEDED | BLOCKED
+
+## Repro Verification (bug only)
+- Original repro:
+- Expected:
+- Actual before fix:
+- Actual after fix:
+- Evidence:
+- Status: PASS | FAIL | BLOCKED
+
+## Feature Verification (feature/update only)
+- Acceptance criteria: PASS | FAIL | BLOCKED
+- Verify commands + result:
+- Reviewer verdict: PASS | FAIL
+- Spec Validator verdict (phase close): PASS | FAIL | n/a
+
+## Doc / Decision Impact
+- Doc impact result: <updated docs or `no doc impact`>
+- Decision log: `.context/decisions.md#...` | none
+- History entry: `docs/history/YYYY-MM.md#...` | pending
+
 ## DoD (Definition of Done)
 - [ ] Code written (chỉ trong scope)
 - [ ] Tests added + pass (bug: test tái hiện fail trước fix)
 - [ ] Check commands pass (theo `.agent/PROJECT_PROFILE.md`)
 - [ ] Reviewer độc lập PASS (`.opencode/agent/reviewer.md`)
+- [ ] `.context/progress.json` updated
+- [ ] Error Memory updated for every failed attempt, or `n/a` recorded
+- [ ] Doc Impact reconciled, or `no doc impact` recorded
+- [ ] Decision log updated if `Decision impact: YES`
 - [ ] `docs/history/YYYY-MM.md` đã append
 
 ## Files to Create/Modify
@@ -73,3 +118,5 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 6. Không sửa tay task sau khi đã chạy — tạo task mới nếu cần.
 7. `tasks/bug-<slug>/scan.md` sinh bởi `/bug-check` là **read-only report** — không sửa code,
    không phải task; user chọn defect xong mới tạo task `/bug` cho từng defect.
+8. Mọi task bug/feature/update phải có `Classification / Risk`, `Retry / Error Memory`,
+   `Verification`, và `Doc / Decision Impact` trước khi Builder bắt đầu.

@@ -21,19 +21,73 @@ Nếu đầu vào là khu vực mơ hồ / nhiều nghi vấn (chưa rõ bug nà
 Chỉ bỏ checkpoint nếu prompt có đúng một trong các cụm: `auto proceed`, `khỏi hỏi lại`,
 `tự xử lý hết không cần hỏi`.
 
+Sau khi user xác nhận thứ tự xử lý, `/bug` phải xử lý **từng bug theo vòng fix-loop** bên dưới.
+Không được chuyển sang Bug discovery/read-only trừ khi input thực sự chỉ là khu vực mơ hồ chưa có bug cụ thể.
+
+## Fix-loop bắt buộc cho từng bug
+
+Một bug chỉ được coi là xong khi **original repro không còn tái hiện** và Reviewer PASS.
+
+1. Ghi rõ repro gốc trước khi sửa:
+   - màn/route/role/dữ liệu liên quan
+   - bước tái hiện
+   - expected
+   - actual before fix
+2. Diagnose root cause bằng code evidence (`file:line`) trước khi sửa.
+3. Builder sửa đúng scope + thêm/sửa test hoặc verification phù hợp.
+4. Verify lại **đúng original repro** sau fix:
+   - actual after fix
+   - evidence: test/check/manual reasoning kèm file/line nếu không chạy được app
+   - status: `PASS` | `FAIL` | `BLOCKED`
+5. Nếu status là `FAIL` hoặc bug vẫn tái hiện → task **chưa hoàn thành**; quay lại bước diagnose/fix trong cùng task.
+6. Nếu status là `BLOCKED` → không báo đã fix; ghi blocker + residual risk + info cần user cung cấp.
+7. Reviewer phải kiểm tra lại repro evidence. Reviewer FAIL → quay lại Builder, không update `done`, không commit/push.
+
+## Retry / Escalation Policy
+
+- Attempt 1 fail: gọi/áp dụng Error Analyzer, xác định lại root cause, fix tối thiểu.
+- Attempt 2 fail: dừng patch triệu chứng; so với pattern code đang hoạt động và kiểm tra lại assumption.
+- Attempt 3 fail: **KHÔNG thử fix #4**. Set trạng thái `blocked` / `ARCHITECTURE_REVIEW_NEEDED`.
+  Tạo Structural Review trong task/report, gồm:
+  - data flow
+  - ownership/scope boundary
+  - API contract
+  - permission/tenant/school filters
+  - state/cache layer
+  - mock/real data boundary
+  - schema/domain mismatch
+- Sau Structural Review: hỏi human hoặc tạo task refactor/design riêng trước khi sửa tiếp.
+
+Template bắt buộc trong task/report bug:
+
+```markdown
+## Repro Verification
+- Original repro:
+- Expected:
+- Actual before fix:
+- Actual after fix:
+- Evidence:
+- Status: PASS | FAIL | BLOCKED
+```
+
 Quy tắc bắt buộc:
 1. Không sửa code trước khi có root cause.
 2. Thiếu info (màn hình / bước tái hiện / expected-actual / role) → hỏi ngắn trước.
 3. Tạo/cập nhật task nếu không phải fix 1 dòng (`tasks/bug-<slug>/...`).
+   Task phải có `Classification / Risk`: severity, scope, root cause category, expected review level,
+   blast radius, doc impact, decision impact.
 4. Builder code + test; Reviewer kiểm tra độc lập (không sửa source; chỉ ghi report scoped).
 5. **Bắt buộc update `.context/progress.json`** (schema maintenance tối thiểu) khi bug đổi trạng thái
-   (`bugs[]`, `activeWorkItem`). `done` chỉ khi reviewer PASS.
+   (`bugs[]`, `activeWorkItem`). `done` chỉ khi repro status `PASS` **và** reviewer PASS.
 6. **Chỉ commit/push khi Reviewer PASS** + progress đã cập nhật.
 7. Commit/push **chỉ tới `target_branch`** trong `.agent/PROJECT_PROFILE.md`, và **chỉ khi**
    `auto_commit_after_pass: true`. Cấm push `forbidden_branch`, cấm `--force`/`-f`.
    Reviewer FAIL hoặc `auto_commit_after_pass: false` → **không** commit/push.
-8. Nếu có code/config/docs/schema change → update progress nếu trạng thái bug đổi; nếu chỉ triage/checkpoint chưa sửa gì thì không ghi done.
-9. Verify commands lấy từ `.agent/PROJECT_PROFILE.md`; nếu command chưa cấu hình hoặc chưa có app code → ghi `skip, no app configured`, không tự hardcode package manager/test command.
-10. Trước khi báo xong/đóng bug phải chạy **Doc Impact & Reconcile** trong `AGENTS.md` + `.agent/FEATURE_WORKFLOW.md`:
+8. Nếu có code/config/docs/schema change → update progress nếu trạng thái bug đổi; nếu chỉ triage/checkpoint chưa sửa gì
+   hoặc repro status `FAIL/BLOCKED/unknown` thì không ghi done.
+9. Mỗi failed attempt phải append `.context/error-memory.md` hoặc ghi rõ vì sao không có entry.
+10. Nếu fix làm đổi kiến trúc/ownership/scope boundary/API contract/mock-real boundary → append `.context/decisions.md`.
+11. Verify commands lấy từ `.agent/PROJECT_PROFILE.md`; nếu command chưa cấu hình hoặc chưa có app code → ghi `skip, no app configured`, không tự hardcode package manager/test command.
+12. Trước khi báo xong/đóng bug phải chạy **Doc Impact & Reconcile** trong `AGENTS.md` + `.agent/FEATURE_WORKFLOW.md`:
     reconcile as-built docs nếu code đổi hoặc ghi rõ `no doc impact`. **Không** sửa intent docs để khớp code;
     code ≠ intent thì ghi gap register nếu có.
