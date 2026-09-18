@@ -94,7 +94,7 @@ project-template/
 │   ├── ERD.md                    ← Schema overview + pointer
 │   ├── PERMISSION.md             ← Roles + guard order (synced from code)
 │   ├── generated/                ← AUTO-GENERATED inventory (do not edit)
-│   └── history/YYYY-MM.md        ← Append-only change log
+│   └── history/YYYY-MM.md        ← Legacy/optional/generated-only change log
 │
 ├── scripts/
 │   └── generate-inventory.mjs    ← Deterministic inventory generator
@@ -378,7 +378,7 @@ opencode
 | Command | Khi nào dùng |
 |---|---|
 | `/bug-check <khu vực>` | Chưa rõ bug nào — soi **read-only**, liệt kê defect vào `tasks/bug-<slug>/scan.md`, dừng chờ bạn chọn |
-| `/bug <mô tả>` | **Một bug đã biết** hoặc list bug đã xác nhận — root cause → build → reviewer → progress/history → push `target_branch` nếu PASS |
+| `/bug <mô tả>` | **Một bug đã biết** hoặc list bug đã xác nhận — root cause → build → reviewer → progress → commit-first → push `target_branch` nếu được phép |
 | `/feature <mô tả>` | Thêm/sửa/bỏ tính năng — classify → spec delta → phase/task → build/review/validate |
 
 Nếu repo chưa có app code/API/web/test hoặc verify command chưa cấu hình, workflow ghi `skip, no app configured`

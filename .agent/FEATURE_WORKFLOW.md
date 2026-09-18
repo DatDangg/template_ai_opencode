@@ -36,7 +36,7 @@ Không rõ intent → hỏi 1 câu ngắn. **Không tự phân loại thành "ch
 
 ```
 Triage → Reproduce → Root cause → Task → Builder → Reviewer PASS
-   → Doc Impact/Reconcile → progress.json → History → (commit/push target_branch nếu auto_commit_after_pass)
+   → Doc Impact/Reconcile → progress.json → commit current branch → (push target_branch nếu được phép)
 ```
 
 ### 2.1 Triage (bắt buộc trước khi sửa)
@@ -55,7 +55,7 @@ Triage → Reproduce → Root cause → Task → Builder → Reviewer PASS
 - ≥3 lần fix fail → set status `architecture_review_needed`, nghi ngờ **kiến trúc**, dừng lại, báo human. Không thử fix #4.
 
 ### 2.4 Task
-- Bug **1 dòng, rõ ràng, không risk** → có thể sửa trực tiếp (vẫn phải update progress nếu đổi trạng thái bug và ghi `Repro Verification` trong `docs/history/YYYY-MM.md`).
+- Bug **1 dòng, rõ ràng, không risk** → có thể sửa trực tiếp (vẫn phải update progress nếu đổi trạng thái bug và ghi `Repro-Verification` trong commit body).
 - Còn lại → tạo `tasks/bug-<slug>/phase-<N>-task-<NN>.md` (format §5).
 - Task bug bắt buộc ghi `Classification / Risk`: severity (`blocker|high|medium|low`), scope,
   root cause category, expected review level, blast radius, doc impact, decision impact.
@@ -86,17 +86,37 @@ Chỉ bỏ checkpoint nếu prompt có đúng một trong các cụm: `auto proc
 - Sau Reviewer PASS, xác định Doc Impact & Reconcile (§6) trước khi đóng bug; không impact → ghi `no doc impact`.
 - `done` chỉ khi reviewer PASS, Doc Impact/Reconcile đã xong hoặc ghi `no doc impact`, và report đúng tên tồn tại trong `.context/review-reports/` (§5).
 
-### 2.8 Commit / push (chỉ khi PASS)
-- Điều kiện **đủ**: reviewer PASS **và** `progress.json` đã cập nhật
-  **và** `auto_commit_after_pass: true` trong `.agent/PROJECT_PROFILE.md`.
+### 2.8 Commit / push (commit-first)
+- Sau khi task/bug/phase PASS review + close-out + cập nhật `.context/progress.json`, phải commit lên branch hiện tại theo convention bên dưới.
+- **1 task = 1 commit**, trừ khi có lý do rõ ràng như shared file interleave nhiều scope; ghi lý do trong commit body hoặc report.
+- Commit là source of truth cho: changed files, timestamp, SHA, rollback point.
+- Task file là source of truth cho: root cause, repro/evidence, residual risk, doc impact/reconcile, verification summary.
+- `.context/progress.json` là source of truth cho: current status, active/completed phase/task, reviewer result/report path.
 - Trước commit: chạy `git status` + `git diff` để chắc không lẫn file ngoài scope task.
 - Chỉ stage file thuộc task hiện tại; không stage dirty cũ ngoài scope.
 - Working tree còn việc khác đang dở → không gộp vào commit task hiện tại.
 - Nếu file shared bị interleave nhiều scope (schema/service/docs) khiến tách commit không an toàn
   → cho phép 1 combined batch commit cho đúng epic đó, ghi rõ lý do; không cố partial-staging gây hỏng build.
+- Commit subject convention:
+  - `feat(feature-<slug>): phase-<N>-task-<NN> <summary>`
+  - `fix(bug-<slug>): phase-<N>-task-<NN> <summary>`
+  - Workflow/template/config: `chore(workflow): <summary>` hoặc `docs(workflow): <summary>`
+- Commit body nên có trailer:
+  ```
+  Task: tasks/<feature-or-bug-slug>/phase-<N>-task-<NN>.md
+  Review: <FAST|NORMAL|STRICT> PASS
+  Review-Report: .context/review-reports/<report>.md
+  Tests: <command> = PASS
+  Migration: <none|migration-name SAFE_ADDITIVE|migration-name HIGH_RISK>
+  Doc-Impact: <none|API_SPEC|ERD|DESIGN|GAPS>
+  ```
+- Với one-line obvious bug không tạo task file, commit body phải có:
+  ```
+  Repro-Verification: <short evidence of root cause + expected/actual>
+  ```
 - Chỉ push tới **`target_branch`** (`.agent/PROJECT_PROFILE.md`). Tuyệt đối không push
   `forbidden_branch`; không `--force`/`-f` (đã chặn ở `opencode.jsonc`).
-- Reviewer FAIL / progress chưa xong / `auto_commit_after_pass: false` → **không** commit/push.
+- Push chỉ khi user yêu cầu rõ hoặc `auto_commit_after_pass: true` trong `.agent/PROJECT_PROFILE.md`; Reviewer FAIL / progress chưa xong → **không** commit/push.
 - Không hardcode tên branch — luôn đọc từ profile.
 
 ### 2.9 Nhánh "bug đã biết" = 1 bug
@@ -201,7 +221,7 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 - Trước khi set feature/phase/task `done`, phải có acceptance PASS, verify commands PASS/skip có lý do,
   Reviewer PASS, Spec Validator PASS khi hết phase, và hoàn tất Doc Impact & Reconcile (§6) hoặc ghi `no doc impact`.
 - Nếu test/check/review/spec status là `FAIL`, `BLOCKED`, hoặc unknown → không set `done`.
-- Commit/push: xem §2.8 (chỉ khi PASS + `auto_commit_after_pass: true`, chỉ tới `target_branch`).
+- Commit/push: xem §2.8 (commit-first sau PASS; push chỉ khi được phép và chỉ tới `target_branch`).
 
 ---
 
@@ -273,8 +293,10 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 
 - **Branch**: tạo `feature/<slug>` hoặc `bug/<slug>`; chỉ push **`target_branch`**;
   **cấm push `forbidden_branch`**, cấm `--force`/`-f` (gate ở `opencode.jsonc` → `permission.bash`).
-- **Commit/push**: mặc định không. Chỉ khi reviewer PASS + progress xong **và**
-  `auto_commit_after_pass: true` (`.agent/PROJECT_PROFILE.md`). FAIL → không commit/push.
+- **Commit-first close-out**: sau task/bug/phase PASS review + Doc Impact/Reconcile + progress xong,
+  commit lên branch hiện tại theo §2.8. FAIL → không commit/push.
+- **Push**: mặc định không. Chỉ khi user yêu cầu rõ hoặc `auto_commit_after_pass: true`
+  (`.agent/PROJECT_PROFILE.md`), và chỉ tới `target_branch`.
 - **Commit hygiene**: trước commit phải `git status` + `git diff`; chỉ stage file thuộc task;
   không stage dirty cũ ngoài scope. Nếu shared file interleave nhiều scope khiến tách commit không an toàn,
   chỉ combined batch commit cho đúng epic đó và ghi rõ lý do.
@@ -293,6 +315,8 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 - **Progress bắt buộc**: mọi thay đổi trạng thái bug/feature → update `.context/progress.json`.
 - **Close-out report gate**: trước status `done`, grep/check `.context/review-reports/` theo slug và đúng tên
   `<feature|bug>-<slug>-phase-<N>-review.md`. Không có report → status `blocked`, không commit/push.
+- **Commit gate**: trước khi báo task/bug/phase xong, commit phải tồn tại hoặc nêu rõ vì sao chưa thể commit
+  (ví dụ Reviewer FAIL, progress chưa xong, dirty unrelated changes không thể tách an toàn).
 - **Doc reconcile**: sau task/bug/phase PASS và trước status `done`, xác định doc impact và reconcile as-built docs:
   API contract/endpoint/response shape → `docs/API_SPEC.md`; schema/model/enum → `docs/ERD.md` + regen
   `docs/generated/*` nếu có; kiến trúc/flow/current behavior → `docs/DESIGN.md` current-state; gap đã giải quyết

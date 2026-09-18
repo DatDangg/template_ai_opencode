@@ -31,9 +31,9 @@ Quy tắc bắt buộc:
      state/cache layer, mock/real data boundary, schema/domain mismatch.
    - Sau Structural Review: hỏi human hoặc tạo task refactor/design riêng trước khi sửa tiếp.
 10. **Bắt buộc update `.context/progress.json`** (schema maintenance: `features[]`, `activeWorkItem`).
-11. **Chỉ commit/push khi Reviewer PASS** + progress đã cập nhật, **chỉ tới `target_branch`**
-   trong `.agent/PROJECT_PROFILE.md`, và **chỉ khi** `auto_commit_after_pass: true`.
-   Cấm push `forbidden_branch`, cấm `--force`/`-f`.
+11. Sau Reviewer PASS + close-out + progress cập nhật, commit lên branch hiện tại theo commit-first rules
+   trong `.agent/FEATURE_WORKFLOW.md` §2.8. Push **chỉ tới `target_branch`** trong `.agent/PROJECT_PROFILE.md`,
+   và **chỉ khi** user yêu cầu rõ hoặc `auto_commit_after_pass: true`. Cấm push `forbidden_branch`, cấm `--force`/`-f`.
 12. Mỗi failed attempt phải append `.context/error-memory.md` hoặc ghi rõ vì sao không có entry.
 13. Nếu update làm đổi kiến trúc/ownership/scope boundary/API contract/mock-real boundary → append `.context/decisions.md`.
 14. Verify commands lấy từ `.agent/PROJECT_PROFILE.md`; nếu command chưa cấu hình hoặc chưa có app code → ghi `skip, no app configured`, không tự hardcode package manager/test command.

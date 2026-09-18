@@ -11,10 +11,10 @@ project: <tên dự án>
 output_language: vi            # vi | en — ngôn ngữ cho docs/summary
 
 # ── Git ──
-target_branch: <target_branch> # branch đích để commit/push sau khi PASS review; chưa điền = hỏi user
+target_branch: <target_branch> # branch đích để push sau commit-first PASS; chưa điền = hỏi user
 forbidden_branch: main         # cấm push trực tiếp (opencode.jsonc hard-deny main/ref main)
 branch_pattern: "feature/<slug>|bug/<slug>"
-auto_commit_after_pass: false  # true = tự commit/push target_branch sau khi reviewer PASS + progress xong
+auto_commit_after_pass: false  # legacy name; true = tự push target_branch sau commit-first PASS + progress xong
 
 # ── Package / source ──
 package_manager: <none|pnpm|npm|yarn|bun>  # none/chưa điền = không hardcode lệnh

@@ -1,10 +1,12 @@
-# docs/history/ — Change Log (append-only)
+# docs/history/ — Legacy Change Log (optional/generated-only)
 
-> Mọi thay đổi **code/config/docs/schema** → append vào `YYYY-MM.md` của tháng hiện tại.
-> **Không sửa/xóa entry cũ** — chỉ thêm mới (append-only) để giữ lịch sử.
-> Với repo template chưa muốn ghi history thật, giữ `TEMPLATE.md`; khi thay đổi workflow thực tế vẫn nên append entry tháng hiện tại.
+> Deprecated for mandatory tracking. Commit-first tracking is the source of truth for changed files,
+> timestamp, SHA, and rollback point. Task files hold root cause/repro/residual risk/doc impact;
+> `.context/progress.json` holds current status and reviewer report path.
+> Keep this folder only as legacy, optional, or generated-only history. Agents must not block close-out
+> on creating or editing `YYYY-MM.md`.
 
-## Format mỗi entry
+## Legacy optional format
 
 ```markdown
 ### YYYY-MM-DD — <feature|bug|chore> · <slug>
@@ -20,6 +22,5 @@
 
 ## Quy tắc
 
-- Cập nhật **trước khi báo xong** một task.
-- Bug: ghi rõ root cause (không chỉ triệu chứng).
-- Breaking change / migration → nêu rõ + rollback.
+- Không bắt buộc cập nhật trước khi báo xong task.
+- Nếu generator hoặc user vẫn tạo entry legacy, bug nên ghi rõ root cause và migration/breaking change nên nêu rollback.

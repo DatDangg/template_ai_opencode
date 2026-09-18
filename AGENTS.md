@@ -30,7 +30,7 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 | Command | Dùng khi | Tính chất |
 |---|---|---|
 | `/bug-check` | Khu vực/màn mơ hồ, "cảm giác nhiều lỗi" | **READ-ONLY** — soi, liệt kê defect vào `tasks/bug-<slug>/scan.md`, **dừng chờ user chọn**. Không sửa, không commit. |
-| `/bug` | **Một bug đã biết** hoặc list bug đã xác nhận | Diagnose root cause → task → builder → reviewer → progress → commit/push target branch nếu PASS |
+| `/bug` | **Một bug đã biết** hoặc list bug đã xác nhận | Diagnose root cause → task → builder → reviewer → progress → commit-first → push target branch nếu được phép |
 | `/feature` | Thêm/sửa/bỏ tính năng | Classify ADDITIVE/MODIFY/REMOVE → spec delta → phase/task → builder/reviewer/spec-validator → progress |
 
 ---
@@ -44,8 +44,8 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 5. Retry/Escalation: sau 3 attempt fail → status `architecture_review_needed`, dừng chờ review kiến trúc/refactor.
 6. **Builder** code + test; **Reviewer** kiểm tra độc lập (không sửa source; chỉ ghi report scoped).
 7. **Cập nhật `.context/progress.json`** (schema maintenance) sau mỗi bước đổi trạng thái bug.
-8. **Chỉ commit/push khi Reviewer PASS** + progress đã cập nhật, và **chỉ tới
-   `target_branch`** trong `.agent/PROJECT_PROFILE.md`. Reviewer FAIL → không commit/push.
+8. Sau Reviewer PASS + close-out + progress cập nhật, **commit-first** theo `.agent/FEATURE_WORKFLOW.md` §2.8.
+   Reviewer FAIL → không commit/push.
 9. **Danh sách bug** hoặc kết quả `/bug-check`, kể cả "fix tất cả defect" → tách từng bug/task,
    tóm tắt số lượng defect, đề xuất thứ tự, nêu bug nào gộp vì cùng root cause, rồi **DỪNG hỏi xác nhận**
    trước khi gọi Builder. Chỉ bỏ checkpoint nếu user ghi rõ `auto proceed`, `khỏi hỏi lại`,
@@ -63,6 +63,16 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 8. **Cập nhật `.context/progress.json`** (schema maintenance).
 9. **Danh sách feature** → tách **mỗi feature thành task riêng**, chốt ưu tiên, xử lý **tuần tự**.
    Gộp chỉ khi cùng mục tiêu/scope (1 feature nhiều phase).
+
+## Commit-First Tracking
+
+- Sau khi task/bug/phase PASS review + close-out + cập nhật `.context/progress.json`, phải commit lên branch hiện tại.
+- **1 task = 1 commit**, trừ khi có lý do rõ ràng.
+- Commit là source of truth cho changed files, timestamp, SHA, rollback point.
+- Task file là source of truth cho root cause, repro/evidence, residual risk, doc impact/reconcile, verification summary.
+- `.context/progress.json` là source of truth cho current status, active/completed phase/task, reviewer result/report path.
+- Commit message convention và body trailer: xem `.agent/FEATURE_WORKFLOW.md` §2.8.
+- Manual `docs/history/YYYY-MM.md` sau mỗi task đã chuyển thành legacy/optional/generated-only.
 
 ### Doc Impact & Reconcile Rules
 
@@ -89,8 +99,8 @@ Code ≠ intent → ghi gap vào gap register (nếu có, vd `docs/changes/TECHN
 
 ## Non-negotiables (mọi route)
 
-- **KHÔNG commit / push / deploy / mở PR** trừ khi user yêu cầu rõ **hoặc** `auto_commit_after_pass: true`
-  trong `.agent/PROJECT_PROFILE.md` **và** Reviewer đã PASS.
+- **Commit** sau PASS theo Commit-First Tracking. **KHÔNG push / deploy / mở PR** trừ khi user yêu cầu rõ
+  **hoặc** `auto_commit_after_pass: true` trong `.agent/PROJECT_PROFILE.md` **và** Reviewer đã PASS.
 - **Chỉ push tới `target_branch`** (`.agent/PROJECT_PROFILE.md`). **Cấm push `forbidden_branch`**,
   cấm `--force` / `-f`. Gate cứng ở `opencode.jsonc` (`permission.bash`).
 - **KHÔNG commit/push khi Reviewer FAIL** hoặc khi progress chưa cập nhật.

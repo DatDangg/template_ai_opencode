@@ -1,7 +1,8 @@
-# History Entry Template
+# Legacy History Entry Template (optional/generated-only)
 
-> Copy block dưới vào `docs/history/YYYY-MM.md` (tháng hiện tại), **append** — không sửa entry cũ.
-> Nếu đang dùng repo như template và chưa muốn ghi history thật, vẫn giữ file template này để agent biết format.
+> Deprecated for mandatory tracking. Commit-first tracking replaces manual history entries.
+> Keep this template only for legacy, optional, or generated-only change logs; agents must not use
+> `docs/history/YYYY-MM.md` as task close-out evidence.
 
 ```markdown
 ### YYYY-MM-DD — <feature|bug|chore> · <slug>
