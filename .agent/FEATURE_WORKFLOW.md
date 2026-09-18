@@ -36,7 +36,7 @@ Không rõ intent → hỏi 1 câu ngắn. **Không tự phân loại thành "ch
 
 ```
 Triage → Reproduce → Root cause → Task → Builder → Reviewer PASS
-   → progress.json → History → (commit/push target_branch nếu auto_commit_after_pass)
+   → Doc Impact/Reconcile → progress.json → History → (commit/push target_branch nếu auto_commit_after_pass)
 ```
 
 ### 2.1 Triage (bắt buộc trước khi sửa)
@@ -55,12 +55,12 @@ Triage → Reproduce → Root cause → Task → Builder → Reviewer PASS
 - ≥3 lần fix fail → nghi ngờ **kiến trúc**, dừng lại, báo human. Không thử fix #4.
 
 ### 2.4 Task
-- Bug **1 dòng, rõ ràng, không risk** → có thể sửa trực tiếp (vẫn phải update progress + history).
+- Bug **1 dòng, rõ ràng, không risk** → có thể sửa trực tiếp (vẫn phải update progress nếu đổi trạng thái bug).
 - Còn lại → tạo `tasks/bug-<slug>/phase-<N>-task-<NN>.md` (format §5).
 
 ### 2.5 Builder → Reviewer
 - Gọi subagent `builder` (hoặc `builder-strong` — xem §7) implement + test.
-- Gọi subagent `reviewer` kiểm tra **độc lập** (edit: deny). FAIL → trả lại builder, **không** đóng bug.
+- Gọi subagent `reviewer` kiểm tra **độc lập** (không sửa source; chỉ ghi report scoped). FAIL → trả lại builder, **không** đóng bug.
 - Regression: **phải có test tái hiện bug fail trước fix**, pass sau fix (test-first).
 - **Chỉ khi reviewer PASS** mới đi tiếp bước 2.7–2.9. FAIL → không update progress là "done", không commit/push.
 
@@ -81,20 +81,23 @@ Chỉ bỏ checkpoint nếu prompt có đúng một trong các cụm: `auto proc
 - Cập nhật `.context/progress.json` ngay khi bug đổi trạng thái:
   thêm/cập nhật entry trong `bugs[]` (`status: triaged → reproducing → root_caused → fixing → review → done|blocked`),
   set `activeWorkItem`.
-- `done` chỉ khi reviewer PASS.
+- Sau Reviewer PASS, xác định Doc Impact & Reconcile (§6) trước khi đóng bug; không impact → ghi `no doc impact`.
+- `done` chỉ khi reviewer PASS, Doc Impact/Reconcile đã xong hoặc ghi `no doc impact`, và report đúng tên tồn tại trong `.context/review-reports/` (§5).
 
-### 2.8 History (bắt buộc)
-- Trước khi báo xong: append `docs/history/YYYY-MM.md` (bug, root cause, fix, test, file đổi).
-
-### 2.9 Commit / push (chỉ khi PASS)
-- Điều kiện **đủ**: reviewer PASS **và** `progress.json` + history đã cập nhật
+### 2.8 Commit / push (chỉ khi PASS)
+- Điều kiện **đủ**: reviewer PASS **và** `progress.json` đã cập nhật
   **và** `auto_commit_after_pass: true` trong `.agent/PROJECT_PROFILE.md`.
+- Trước commit: chạy `git status` + `git diff` để chắc không lẫn file ngoài scope task.
+- Chỉ stage file thuộc task hiện tại; không stage dirty cũ ngoài scope.
+- Working tree còn việc khác đang dở → không gộp vào commit task hiện tại.
+- Nếu file shared bị interleave nhiều scope (schema/service/docs) khiến tách commit không an toàn
+  → cho phép 1 combined batch commit cho đúng epic đó, ghi rõ lý do; không cố partial-staging gây hỏng build.
 - Chỉ push tới **`target_branch`** (`.agent/PROJECT_PROFILE.md`). Tuyệt đối không push
   `forbidden_branch`; không `--force`/`-f` (đã chặn ở `opencode.jsonc`).
-- Reviewer FAIL / progress-history chưa xong / `auto_commit_after_pass: false` → **không** commit/push.
+- Reviewer FAIL / progress chưa xong / `auto_commit_after_pass: false` → **không** commit/push.
 - Không hardcode tên branch — luôn đọc từ profile.
 
-### 2.10 Nhánh "bug đã biết" = 1 bug
+### 2.9 Nhánh "bug đã biết" = 1 bug
 - `/bug` chỉ xử lý **một bug đã biết**. Nếu input là khu vực mơ hồ / danh sách nghi vấn
   → chạy `/bug-check` (§2b) trước, dừng chờ user chọn.
 
@@ -111,6 +114,24 @@ Quy tắc bắt buộc:
 - **KHÔNG** sửa code, **KHÔNG** gọi `builder`/`builder-strong`, **KHÔNG** update `progress.json`,
   **KHÔNG** commit/push.
 - Chỉ được tạo/ghi **một file**: `tasks/bug-<slug>/scan.md`.
+- Phân loại trước khi soi: **SINGLE-SURFACE** (1 màn/luồng) hoặc **CROSS-CUTTING** (theme/dark mode,
+  permission, i18n, tenant/campus, responsive, format tiền/ngày, a11y, loading/empty state).
+- CROSS-CUTTING: bắt buộc enumerate toàn bộ surface ứng viên theo `source_roots` trong
+  `.agent/PROJECT_PROFILE.md`; **CẤM sampling**. Surface gồm page `**/page.tsx`, layout `**/layout.tsx`,
+  component dùng chung `**/components/**/*.tsx`, CSS `**/*.css`.
+- CROSS-CUTTING dùng query count-based: đếm match theo từng file; `count=0` vẫn ghi coverage là đã soi;
+  `count>0` đọc đúng vùng match để xác nhận và loại trừ variant hợp lệ như `dark:` hoặc token đúng.
+- Chia batch 15–25 file/batch; append `scan.md` sau **mỗi batch**.
+- Không kết luận khi coverage chưa đủ. Chỉ dừng khi 100% surface đã enumerate hoặc `scan.md` có
+  `## Chưa soi` nêu lý do + `% đã soi`.
+- `scan.md` bắt buộc có `## Coverage` với enumerate / đã soi / % / mỗi file `soi | count | kết luận`,
+  và bắt buộc có `## Chưa soi`.
+- CRUD/capability: không đánh giá cấp module. Mỗi API collection/mutation
+  (`GET/POST/PATCH/DELETE /module/resource`) là một dòng capability riêng với cột:
+  `Module | Sub-resource/API | FE section/table | List | Create UI | Edit UI | Delete UI | Empty CTA | Evidence`.
+- `Create UI = Có` chỉ khi đúng resource đó có nút/form; không suy từ resource khác cùng module.
+- API có POST nhưng FE chỉ list, không có nút/form/empty CTA → DEFECT hoặc `[cần xác nhận]`.
+- Empty state không chỉ cách tạo data nguồn → DATA_SETUP/UX_DEFECT.
 - Report là bảng defect: `# | Mô tả | Tái hiện | Expected | Actual | Root cause (file:line) | Severity | File cần sửa | Ước lượng`.
 - Kết thúc: chạy `git status --short`; nếu có file nào khác `scan.md` biến động → cảnh báo vi phạm read-only.
 - Output xong → **dừng**, chờ user chọn defect (mỗi defect xử lý bằng `/bug`).
@@ -121,7 +142,7 @@ Quy tắc bắt buộc:
 
 ```
 Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
-   → Loop(builder/reviewer) → Phase Review → History
+   → Loop(builder/reviewer) → Phase Review → Doc Impact/Reconcile → Progress
 ```
 
 ### 3.1 Classify
@@ -134,7 +155,7 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 - Liệt kê ảnh hưởng tới phase/task đã có (regression risk).
 
 ### 3.3 Spec Validator
-- Gọi subagent `spec-validator` (edit: deny) cross-check delta vs spec & docs.
+- Gọi subagent `spec-validator` (không sửa source; chỉ được ghi report scoped) cross-check delta vs spec & docs.
 - FAIL → quay lại làm rõ. PASS → chia phase/task.
 
 ### 3.4 Phase / Task
@@ -150,16 +171,17 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 
 ### 3.7 Phase Review
 - Sau khi cả phase PASS: `spec-validator` cross-check "đã build đúng & đủ so với spec delta".
-- PASS → phase done → checkpoint. GAP → quay lại bổ sung.
+- PASS → xác định Doc Impact & Reconcile (§6) trước khi phase done/checkpoint; không impact → ghi `no doc impact`.
+  GAP → quay lại bổ sung.
 
 ### 3.8 Nhánh "đầu vào là danh sách feature"
 - Tách **mỗi feature thành task/feature riêng**, chốt ưu tiên, xử lý **tuần tự**.
 - Gộp chỉ khi cùng mục tiêu/scope (1 feature nhiều phase).
 
-### 3.9 Progress & History (bắt buộc)
+### 3.9 Progress (bắt buộc)
 - Update `.context/progress.json`: thêm/cập nhật entry trong `features[]`, set `activeWorkItem`.
-- Append `docs/history/YYYY-MM.md` (feature, spec delta, phase done, file đổi).
-- Commit/push: xem §2.9 (chỉ khi PASS + `auto_commit_after_pass: true`, chỉ tới `target_branch`).
+- Trước khi set feature/phase/task `done`, phải hoàn tất Doc Impact & Reconcile (§6) hoặc ghi `no doc impact`.
+- Commit/push: xem §2.8 (chỉ khi PASS + `auto_commit_after_pass: true`, chỉ tới `target_branch`).
 
 ---
 
@@ -220,26 +242,53 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 - Bug: `tasks/bug-<slug>/phase-<N>-task-<NN>.md`
 
 ### Review report
-- `.context/review-reports/<feature|bug>-<slug>-phase-<N>-<review|layer-review>.md`
-
-### History
-- `docs/history/YYYY-MM.md` (append, không ghi đè)
-
----
+- Reviewer report phải đúng tên: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-review.md`.
+- Trước khi set status `done`: kiểm tra report tồn tại bằng slug/path. Không có report → **KHÔNG đóng việc**.
 
 ## 6. Cổng chặn (gates)
 
 - **Branch**: tạo `feature/<slug>` hoặc `bug/<slug>`; chỉ push **`target_branch`**;
   **cấm push `forbidden_branch`**, cấm `--force`/`-f` (gate ở `opencode.jsonc` → `permission.bash`).
-- **Commit/push**: mặc định không. Chỉ khi reviewer PASS + progress/history xong **và**
+- **Commit/push**: mặc định không. Chỉ khi reviewer PASS + progress xong **và**
   `auto_commit_after_pass: true` (`.agent/PROJECT_PROFILE.md`). FAIL → không commit/push.
+- **Commit hygiene**: trước commit phải `git status` + `git diff`; chỉ stage file thuộc task;
+  không stage dirty cũ ngoài scope. Nếu shared file interleave nhiều scope khiến tách commit không an toàn,
+  chỉ combined batch commit cho đúng epic đó và ghi rõ lý do.
 - **Migration**: chỉ áp dụng khi `db_tool != none` **và** `migration_required: true`;
-  versioned + committed; không sửa migration đã apply. `db_tool: none` → bỏ qua gate này.
+  versioned + committed; không sửa migration đã apply, tạo migration mới. `db_tool: none` → bỏ qua gate này.
+- **Migration high-risk**: trước commit phải inspect `migration.sql` hoặc migration artifact theo `db_tool`.
+  Nếu có `DROP TABLE/COLUMN`, đổi type, `SET NOT NULL`, `UNIQUE/FK` trên data cũ, enum phá hoại,
+  bulk transform/backfill → gắn `HIGH_RISK_MIGRATION`, **KHÔNG promote production**, báo destructive op,
+  table/column ảnh hưởng, tương thích data, backfill, rollback, kết quả verify staging.
+- **Migration forbidden ops**: cấm `db push`, `migrate reset`, seed/reset, clone data giữa môi trường cho staging/prod.
+  Flow chuẩn: dev → migration versioned → staging deploy theo `migration_command`/`db_tool` đã cấu hình
+  → verify → promote đúng migration đã test lên prod.
+- **Migration env isolation**: `staging_db` phải khác `prod_db`; data độc lập; không sync data staging→prod.
 - **Secrets**: chỉ từ env; không hardcode/commit; không log.
 - **UI**: responsive 375/768/1280; a11y; đo contrast; không slop (skills UI).
-- **History bắt buộc**: mọi thay đổi code/config/docs/schema → append `docs/history/YYYY-MM.md`.
 - **Progress bắt buộc**: mọi thay đổi trạng thái bug/feature → update `.context/progress.json`.
+- **Close-out report gate**: trước status `done`, grep/check `.context/review-reports/` theo slug và đúng tên
+  `<feature|bug>-<slug>-phase-<N>-review.md`. Không có report → status `blocked`, không commit/push.
+- **Doc reconcile**: sau task/bug/phase PASS và trước status `done`, xác định doc impact và reconcile as-built docs:
+  API contract/endpoint/response shape → `docs/API_SPEC.md`; schema/model/enum → `docs/ERD.md` + regen
+  `docs/generated/*` nếu có; kiến trúc/flow/current behavior → `docs/DESIGN.md` current-state; gap đã giải quyết
+  → đổi status gap register. Không đổi contract/schema/behavior tài liệu hoá → ghi rõ `no doc impact`.
+- **As-built vs intent**: as-built docs (`docs/API_SPEC.md`, `docs/ERD.md`, `docs/DESIGN.md` current-state,
+  generated inventory, gap register status) được reconcile khi code đổi, kèm evidence code. Intent docs
+  (`docs/BRD.md`, `docs/PRD.md`, `docs/USER_FLOW.md` target, business rules trong `SPECIFICATIONS.md` nếu có)
+  chỉ đổi qua Change Request + user duyệt.
+- **Code ≠ intent**: ghi gap vào gap register nếu có (vd `docs/changes/TECHNICAL_REQUIREMENT_GAPS.md`),
+  **KHÔNG** hạ cấp intent cho khớp code. Fix code sai rồi sửa doc cho khớp = hợp pháp hoá bug, coi là vi phạm.
 - **Docs không nhúng code tay**: API_SPEC/ERD là overview + pointer tới source of truth/generated.
+
+### Tool Loop Guard
+
+- Không chạy lặp cùng 1 shell/search/read command y hệt quá 1 lần.
+- Không thử cùng 1 giả thuyết quá 2 lần bằng biến thể gần giống.
+- Command/search trả empty hoặc non-zero → ghi nhận kết quả và chuyển hướng; không retry vô hạn.
+- Bash bị permission deny → **DỪNG NGAY**: không retry, không đổi biến thể, không vòng qua pipeline;
+  chuyển Grep/Read hoặc ghi `Blocked`.
+- Không xác minh được → ghi `Residual risk`/`Blocked`, không lặp tool.
 
 ### Check commands
 Lấy từ `.agent/PROJECT_PROFILE.md` → các field `web_typecheck_command`, `web_lint_command`,
@@ -282,7 +331,7 @@ không fail workflow và không tự hardcode lệnh.
 
 - Nếu **chưa** cấu hình, frontmatter để comment → subagent **kế thừa model chính**
   (builder == reviewer, mất tác dụng tránh bias). Khi cần, chạy lại `0.5.C` rồi restart.
-- `reviewer` / `spec-validator` có `edit: deny` → không tự sửa khi đang review.
+- `reviewer` / `spec-validator` không được sửa source; chỉ được ghi report scoped khi đang review.
 - Chạy dạng **subagent** → context sạch, không thừa hưởng completion report của builder.
 
 ### Luật opt-in `builder-strong`

@@ -23,10 +23,29 @@ Bạn là người **soi lỗi**, KHÔNG phải người sửa lỗi. Tuyệt đ
 
 ## Cách soi (chỉ đọc)
 
-- Xác định phạm vi: màn hình / module / route / file liên quan.
+- Đọc `.agent/PROJECT_PROFILE.md` trước để lấy `source_roots`; nếu `source_roots: []` hoặc placeholder
+  → ghi `skip, no app configured` / `[cần xác nhận]`, không tự hardcode path app.
+- Phân loại phạm vi trước khi soi:
+  - **SINGLE-SURFACE**: 1 màn/luồng cụ thể.
+  - **CROSS-CUTTING**: lỗi lặp hệ thống như theme/dark mode, permission, i18n, tenant/campus,
+    responsive, format tiền/ngày, a11y, loading/empty state.
+- SINGLE-SURFACE: xác định màn hình / module / route / file liên quan.
+- CROSS-CUTTING: bắt buộc enumerate toàn bộ surface ứng viên trước khi kết luận, **CẤM sampling**.
+  Theo từng `source_roots`, liệt kê page `**/page.tsx`, layout `**/layout.tsx`, component dùng chung
+  `**/components/**/*.tsx`, CSS `**/*.css`.
+- CROSS-CUTTING query count-based: đếm match theo từng file. File `count=0` vẫn coi là đã soi và ghi coverage;
+  file `count>0` chỉ đọc đúng vùng match để xác nhận, loại trừ variant hợp lệ như `dark:` hoặc design token đúng.
+- Chia batch 15–25 file/batch; append `scan.md` sau **mỗi batch**, không chờ cuối.
+- Không kết luận khi coverage chưa đủ. Chỉ dừng khi 100% surface đã enumerate hoặc liệt kê rõ `## Chưa soi`
+  với lý do và `% đã soi`.
 - Đọc code + trace luồng; đối chiếu `docs/**`, `SPECIFICATIONS.md`, `.agent/PROJECT_PROFILE.md`.
 - Với mỗi nghi vấn: xác định **tái hiện** (điều kiện, bước), **expected vs actual**,
   **root cause kèm `file:line`** (nếu chưa chắc ghi `nghi ngờ` + lý do).
+- CRUD/capability: **KHÔNG đánh giá cấp module**. Mỗi API collection/mutation
+  (`GET/POST/PATCH/DELETE /module/resource`) là **một dòng capability riêng**.
+- `Create UI = Có` chỉ khi đúng resource đó có nút/form; không suy từ resource khác cùng module.
+- API có `POST` nhưng FE chỉ list, không có nút/form/empty CTA → ghi DEFECT hoặc `[cần xác nhận]`.
+- Empty state không chỉ cách tạo data nguồn → ghi DATA_SETUP/UX_DEFECT.
 - Ưu tiên chạy check read-only để có bằng chứng (đọc `.agent/PROJECT_PROFILE.md` →
   `web_typecheck_command`, `web_lint_command`, `api_typecheck_command`, `api_lint_command`,
   `test_command`; `check_commands` chỉ là alias tổng hợp nếu project đã điền).
@@ -40,6 +59,28 @@ Bạn là người **soi lỗi**, KHÔNG phải người sửa lỗi. Tuyệt đ
 
 ## Phạm vi đã soi
 - ...
+
+## Classification
+- Type: SINGLE-SURFACE | CROSS-CUTTING
+- Source roots: ...
+
+## Coverage
+- Enumerated surfaces: <n>
+- Đã soi: <n>
+- Coverage: <percent>%
+
+| File | Surface type | Batch | Count | Kết luận |
+|---|---|---:|---:|---|
+| `path/file.tsx` | page/layout/component/css | 1 | 0 | soi, no match |
+
+## Chưa soi
+- <file/surface> — <lý do> — <% còn lại>
+
+## CRUD / Capability Matrix
+
+| Module | Sub-resource/API | FE section/table | List | Create UI | Edit UI | Delete UI | Empty CTA | Evidence |
+|---|---|---|---|---|---|---|---|---|
+| ... | `GET/POST/PATCH/DELETE /module/resource` | ... | Có/Không | Có/Không/[cần xác nhận] | Có/Không | Có/Không | Có/Không | `file:line` |
 
 ## Defects
 

@@ -28,10 +28,12 @@ Quy tắc bắt buộc:
 4. Builder code + test; Reviewer kiểm tra độc lập (subagent, edit: deny).
 5. **Bắt buộc update `.context/progress.json`** (schema maintenance tối thiểu) khi bug đổi trạng thái
    (`bugs[]`, `activeWorkItem`). `done` chỉ khi reviewer PASS.
-6. **Bắt buộc update `docs/history/YYYY-MM.md`** trước khi báo xong.
-7. **Chỉ commit/push khi Reviewer PASS** + progress/history đã cập nhật.
-8. Commit/push **chỉ tới `target_branch`** trong `.agent/PROJECT_PROFILE.md`, và **chỉ khi**
+6. **Chỉ commit/push khi Reviewer PASS** + progress đã cập nhật.
+7. Commit/push **chỉ tới `target_branch`** trong `.agent/PROJECT_PROFILE.md`, và **chỉ khi**
    `auto_commit_after_pass: true`. Cấm push `forbidden_branch`, cấm `--force`/`-f`.
    Reviewer FAIL hoặc `auto_commit_after_pass: false` → **không** commit/push.
-9. Nếu có code/config/docs/schema change → update progress/history; nếu chỉ triage/checkpoint chưa sửa gì thì không ghi done.
-10. Verify commands lấy từ `.agent/PROJECT_PROFILE.md`; nếu command chưa cấu hình hoặc chưa có app code → ghi `skip, no app configured`, không tự hardcode package manager/test command.
+8. Nếu có code/config/docs/schema change → update progress nếu trạng thái bug đổi; nếu chỉ triage/checkpoint chưa sửa gì thì không ghi done.
+9. Verify commands lấy từ `.agent/PROJECT_PROFILE.md`; nếu command chưa cấu hình hoặc chưa có app code → ghi `skip, no app configured`, không tự hardcode package manager/test command.
+10. Trước khi báo xong/đóng bug phải chạy **Doc Impact & Reconcile** trong `AGENTS.md` + `.agent/FEATURE_WORKFLOW.md`:
+    reconcile as-built docs nếu code đổi hoặc ghi rõ `no doc impact`. **Không** sửa intent docs để khớp code;
+    code ≠ intent thì ghi gap register nếu có.

@@ -6,6 +6,10 @@
   // Permission `task` khớp theo TÊN subagent. Last match wins → `*` đứng trước.
   // ⚠️ Auto-mode (--auto / auto-approve) sẽ tự duyệt `ask` → mất gate.
   // ═══════════════════════════════════════════════════════════════════════════
+  "skills": {
+    "paths": ["./skills"]
+  },
+
   "permission": {
     "task": {
       "*": "allow",
@@ -23,6 +27,9 @@
       "git push": "deny",
       "git push origin": "deny",
 
+      // --- Cho phép push explicit target branch generic; deny hẹp bên dưới vẫn override ---
+      "git push origin *": "allow",
+
       // --- Cấm push thẳng main (mọi biến thể, kể cả refspec refs/heads/main) ---
       "git push* main*": "deny",
       "git push* main": "deny",
@@ -38,15 +45,21 @@
       "git push* -f*": "deny",
       "git push*-f *": "deny",
 
+      // --- Cấm xóa remote branch ---
+      "git push origin --delete*": "deny",
+      "git push origin :*": "deny",
+
       // --- Cấm phá hoại working tree ---
       "git reset --hard*": "deny",
       "git checkout --*": "deny"
 
       // Bare git push is denied. Automation must use explicit target branch from PROJECT_PROFILE:
       // `git push origin <target_branch>`.
+      // PROJECT_PROFILE.forbidden_branch is not read automatically by opencode.jsonc;
+      // add a local deny rule for the real forbidden branch if it is not `main`.
 
       // --- Template generic: KHÔNG hardcode target_branch ở đây.
-      //     Nếu project muốn allow hẹp, điền tên branch thật trong PROJECT_PROFILE rồi thêm rule local:
+      //     Nếu project muốn allow hẹp hơn, điền tên branch thật trong PROJECT_PROFILE rồi thêm rule local:
       // "git push origin <target_branch>*": "allow",
       // "git push -u origin <target_branch>*": "allow",
     }

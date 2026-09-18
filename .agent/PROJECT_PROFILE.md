@@ -14,7 +14,7 @@ output_language: vi            # vi | en — ngôn ngữ cho docs/summary
 target_branch: <target_branch> # branch đích để commit/push sau khi PASS review; chưa điền = hỏi user
 forbidden_branch: main         # cấm push trực tiếp (opencode.jsonc hard-deny main/ref main)
 branch_pattern: "feature/<slug>|bug/<slug>"
-auto_commit_after_pass: false  # true = tự commit/push target_branch sau khi reviewer PASS + progress/history xong
+auto_commit_after_pass: false  # true = tự commit/push target_branch sau khi reviewer PASS + progress xong
 
 # ── Package / source ──
 package_manager: <none|pnpm|npm|yarn|bun>  # none/chưa điền = không hardcode lệnh
@@ -37,6 +37,7 @@ db_tool: none                  # none | prisma | drizzle | other
 migration_required: false      # true nếu cần migration versioned (chỉ khi db_tool != none)
 staging_db: <tên DB staging>
 prod_db: <tên DB production>
+destructive_migration_policy: HIGH_RISK_MIGRATION
 ```
 
 ### DB / migration
@@ -46,6 +47,13 @@ prod_db: <tên DB production>
 - `db_tool != none` **và** `migration_required: true` → áp dụng migration gate:
   migration phải versioned + committed, không sửa migration đã apply.
 - Không hardcode Prisma/Drizzle: dùng đúng `db_tool` đã khai.
+- Trước commit phải inspect migration artifact theo `db_tool`/`migration_command`. Nếu có `DROP TABLE/COLUMN`,
+  đổi type, `SET NOT NULL`, `UNIQUE/FK` trên data cũ, enum phá hoại, bulk transform/backfill
+  → gắn `HIGH_RISK_MIGRATION`, không promote production, báo destructive op, table/column ảnh hưởng,
+  tương thích data, backfill, rollback, kết quả verify staging.
+- Cấm `db push`, `migrate reset`, seed/reset, clone data giữa staging/prod. Flow: dev → migration versioned
+  → staging deploy bằng command đã cấu hình → verify → promote đúng migration đã test lên prod.
+- `staging_db` phải khác `prod_db`; data độc lập; không sync data staging→prod.
 
 ## Check commands (chạy trước khi báo xong)
 

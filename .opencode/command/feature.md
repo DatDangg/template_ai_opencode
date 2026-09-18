@@ -14,9 +14,11 @@ Quy tắc bắt buộc:
 5. Trình phase plan → chờ user duyệt mới code.
 6. Mỗi task: Builder code + test → Reviewer độc lập; hết phase → Spec Validator cross-check gap.
 7. **Bắt buộc update `.context/progress.json`** (schema maintenance: `features[]`, `activeWorkItem`).
-8. **Bắt buộc update `docs/history/YYYY-MM.md`** trước khi báo xong.
-9. **Chỉ commit/push khi Reviewer PASS** + progress/history đã cập nhật, **chỉ tới `target_branch`**
+8. **Chỉ commit/push khi Reviewer PASS** + progress đã cập nhật, **chỉ tới `target_branch`**
    trong `.agent/PROJECT_PROFILE.md`, và **chỉ khi** `auto_commit_after_pass: true`.
    Cấm push `forbidden_branch`, cấm `--force`/`-f`.
-10. Verify commands lấy từ `.agent/PROJECT_PROFILE.md`; nếu command chưa cấu hình hoặc chưa có app code → ghi `skip, no app configured`, không tự hardcode package manager/test command.
+9. Verify commands lấy từ `.agent/PROJECT_PROFILE.md`; nếu command chưa cấu hình hoặc chưa có app code → ghi `skip, no app configured`, không tự hardcode package manager/test command.
+10. Trước khi báo xong/đóng task/phase phải chạy **Doc Impact & Reconcile** trong `AGENTS.md` + `.agent/FEATURE_WORKFLOW.md`:
+    reconcile as-built docs nếu code đổi hoặc ghi rõ `no doc impact`. **Không** sửa intent docs để khớp code;
+    code ≠ intent thì ghi gap register nếu có.
 11. Nếu đầu vào là danh sách feature → tách mỗi feature thành task riêng, chốt ưu tiên, xử lý tuần tự.
