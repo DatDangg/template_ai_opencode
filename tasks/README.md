@@ -40,7 +40,7 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 - Root cause category: PERMISSION_SCOPE | TENANT_SCHOOL_BOUNDARY | API_CONTRACT | MOCK_REAL_DATA_BOUNDARY | STATE_CACHE | SCHEMA_DOMAIN | UI_LOGIC | CONFIG_ENV | RACE_TIMING | UNKNOWN | n/a
 - Review level expected: FAST | NORMAL | STRICT
 - Blast radius: <files/modules/API/client/data affected>
-- Doc impact: API_SPEC | ERD | DESIGN | PERMISSION | HISTORY | NO_DOC_IMPACT
+- Doc impact: API_SPEC | ERD | DESIGN | GAPS | NO_DOC_IMPACT
 - Decision impact: YES | NO — if YES, append `.context/decisions.md`
 
 ## Phase

@@ -99,8 +99,8 @@ Code ≠ intent → ghi gap vào gap register (nếu có, vd `docs/changes/TECHN
 
 ## Non-negotiables (mọi route)
 
-- **Commit** sau PASS theo Commit-First Tracking. **KHÔNG push / deploy / mở PR** trừ khi user yêu cầu rõ
-  **hoặc** `auto_commit_after_pass: true` trong `.agent/PROJECT_PROFILE.md` **và** Reviewer đã PASS.
+- **Commit** sau PASS theo Commit-First Tracking. `auto_commit_after_pass: true` chỉ cho phép auto-push
+  `target_branch` sau PASS; **deploy / mở PR luôn cần user yêu cầu rõ**.
 - **Chỉ push tới `target_branch`** (`.agent/PROJECT_PROFILE.md`). **Cấm push `forbidden_branch`**,
   cấm `--force` / `-f`. Gate cứng ở `opencode.jsonc` (`permission.bash`).
 - **KHÔNG commit/push khi Reviewer FAIL** hoặc khi progress chưa cập nhật.

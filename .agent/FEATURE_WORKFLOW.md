@@ -84,7 +84,7 @@ Chỉ bỏ checkpoint nếu prompt có đúng một trong các cụm: `auto proc
   thêm/cập nhật entry trong `bugs[]` (`status: triaged → reproducing → root_caused → fixing → review → done|blocked|architecture_review_needed`),
   set `activeWorkItem`.
 - Sau Reviewer PASS, xác định Doc Impact & Reconcile (§6) trước khi đóng bug; không impact → ghi `no doc impact`.
-- `done` chỉ khi reviewer PASS, Doc Impact/Reconcile đã xong hoặc ghi `no doc impact`, và report đúng tên tồn tại trong `.context/review-reports/` (§5).
+- `done` chỉ khi reviewer PASS, Doc Impact/Reconcile đã xong hoặc ghi `no doc impact`, report đúng tên tồn tại trong `.context/review-reports/` (§5), và commit sau PASS close-out đã tồn tại.
 
 ### 2.8 Commit / push (commit-first)
 - Sau khi task/bug/phase PASS review + close-out + cập nhật `.context/progress.json`, phải commit lên branch hiện tại theo convention bên dưới.
@@ -165,6 +165,7 @@ Quy tắc bắt buộc:
 ```
 Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
    → Loop(builder/reviewer) → Phase Review → Doc Impact/Reconcile → Progress
+   → commit current branch → (push target_branch nếu được phép)
 ```
 
 ### 3.1 Classify
@@ -219,7 +220,8 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 ### 3.9 Progress (bắt buộc)
 - Update `.context/progress.json`: thêm/cập nhật entry trong `features[]`, set `activeWorkItem`.
 - Trước khi set feature/phase/task `done`, phải có acceptance PASS, verify commands PASS/skip có lý do,
-  Reviewer PASS, Spec Validator PASS khi hết phase, và hoàn tất Doc Impact & Reconcile (§6) hoặc ghi `no doc impact`.
+  Reviewer PASS, Spec Validator PASS khi hết phase, hoàn tất Doc Impact & Reconcile (§6) hoặc ghi `no doc impact`,
+  và commit sau PASS close-out đã tồn tại.
 - Nếu test/check/review/spec status là `FAIL`, `BLOCKED`, hoặc unknown → không set `done`.
 - Commit/push: xem §2.8 (commit-first sau PASS; push chỉ khi được phép và chỉ tới `target_branch`).
 
@@ -315,8 +317,8 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 - **Progress bắt buộc**: mọi thay đổi trạng thái bug/feature → update `.context/progress.json`.
 - **Close-out report gate**: trước status `done`, grep/check `.context/review-reports/` theo slug và đúng tên
   `<feature|bug>-<slug>-phase-<N>-review.md`. Không có report → status `blocked`, không commit/push.
-- **Commit gate**: trước khi báo task/bug/phase xong, commit phải tồn tại hoặc nêu rõ vì sao chưa thể commit
-  (ví dụ Reviewer FAIL, progress chưa xong, dirty unrelated changes không thể tách an toàn).
+- **Commit gate**: trước khi báo task/bug/phase `done`, commit sau PASS close-out phải tồn tại. Nếu chưa commit được
+  thì status phải là `blocked` + residual risk/lý do (ví dụ progress chưa xong, dirty unrelated changes không thể tách an toàn), không được set `done`.
 - **Doc reconcile**: sau task/bug/phase PASS và trước status `done`, xác định doc impact và reconcile as-built docs:
   API contract/endpoint/response shape → `docs/API_SPEC.md`; schema/model/enum → `docs/ERD.md` + regen
   `docs/generated/*` nếu có; kiến trúc/flow/current behavior → `docs/DESIGN.md` current-state; gap đã giải quyết
