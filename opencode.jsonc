@@ -1,0 +1,67 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Gate cứng cho model mạnh: gọi builder-strong PHẢI qua prompt duyệt của user.
+  // Permission `task` khớp theo TÊN subagent. Last match wins → `*` đứng trước.
+  // ⚠️ Auto-mode (--auto / auto-approve) sẽ tự duyệt `ask` → mất gate.
+  // ═══════════════════════════════════════════════════════════════════════════
+  "skills": {
+    "paths": ["./skills"]
+  },
+
+  "permission": {
+    "task": {
+      "*": "allow",
+      "builder-strong": "ask"
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Gate git: chặn push thẳng main/ref main + mọi thao tác phá hoại.
+    // opencode eval theo THỨ TỰ → rule rộng `*` đứng TRƯỚC, rule hẹp đứng SAU.
+    // ═══════════════════════════════════════════════════════════════════════════
+    "bash": {
+      "*": "allow",
+
+      // --- Cấm push trần: automation phải dùng explicit target branch từ PROJECT_PROFILE ---
+      "git push": "deny",
+      "git push origin": "deny",
+
+      // --- Cho phép push explicit target branch generic; deny hẹp bên dưới vẫn override ---
+      "git push origin *": "allow",
+
+      // --- Cấm push thẳng main (mọi biến thể, kể cả refspec refs/heads/main) ---
+      "git push* main*": "deny",
+      "git push* main": "deny",
+      "git push*:main*": "deny",
+      "git push*HEAD:main*": "deny",
+      "git push*+main*": "deny",
+      "git push*refs/heads/main*": "deny",
+
+      // --- Cấm force push ---
+      "git push --force*": "deny",
+      "git push*--force*": "deny",
+      "git push -f*": "deny",
+      "git push* -f*": "deny",
+      "git push*-f *": "deny",
+
+      // --- Cấm xóa remote branch ---
+      "git push origin --delete*": "deny",
+      "git push origin :*": "deny",
+
+      // --- Cấm phá hoại working tree ---
+      "git reset --hard*": "deny",
+      "git checkout --*": "deny"
+
+      // Bare git push is denied. Automation must use explicit target branch from PROJECT_PROFILE:
+      // `git push origin <target_branch>`.
+      // PROJECT_PROFILE.forbidden_branch is not read automatically by opencode.jsonc;
+      // add a local deny rule for the real forbidden branch if it is not `main`.
+
+      // --- Template generic: KHÔNG hardcode target_branch ở đây.
+      //     Nếu project muốn allow hẹp hơn, điền tên branch thật trong PROJECT_PROFILE rồi thêm rule local:
+      // "git push origin <target_branch>*": "allow",
+      // "git push -u origin <target_branch>*": "allow",
+    }
+  }
+}

@@ -1,5 +1,9 @@
 # React + Node.js — Tech Stack
 
+> Example/default for React + Node projects only. Không phải rule global.
+> Luôn đọc `.agent/PROJECT_PROFILE.md` trước: ORM lấy từ `db_tool`, package manager lấy từ
+> `package_manager`. Nếu unset/`none`, không giả định Prisma/pnpm.
+
 ## Core
 
 | Category | Technology | Version |
@@ -10,7 +14,7 @@
 | Bundler | Vite | 8.x |
 | React Compiler | oxc-transform-react (native Rust) | latest |
 | Backend | Express | 4.x |
-| ORM | Prisma | 5.x |
+| ORM | From `PROJECT_PROFILE.db_tool` | `none` / `prisma` / `drizzle` / `other`; không giả định Prisma |
 | Validation | Zod | 3.x |
 
 ## Frontend Stack
@@ -66,7 +70,7 @@
 
 | Category | Tool |
 |----------|------|
-| Package Manager | pnpm |
+| Package Manager | From `PROJECT_PROFILE.package_manager`; không giả định pnpm |
 | Linting | ESLint |
 | Formatting | Prettier |
 | Git Hooks | husky + lint-staged |
