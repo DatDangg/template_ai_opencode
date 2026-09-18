@@ -40,11 +40,13 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 1. **Không sửa triệu chứng trước khi có root cause.** (Iron Law — `skills/superpowers/systematic-debugging.md`)
 2. **Thiếu info** (màn hình / bước tái hiện / expected-actual / role/vai trò) → **hỏi ngắn trước**, không tự giả định.
 3. Bug **không phải sửa 1 dòng** → tạo task: `tasks/bug-<slug>/phase-<N>-task-<NN>.md`.
-4. **Builder** code + test; **Reviewer** kiểm tra độc lập (không sửa source; chỉ ghi report scoped).
-5. **Cập nhật `.context/progress.json`** (schema maintenance) sau mỗi bước đổi trạng thái bug.
-6. **Chỉ commit/push khi Reviewer PASS** + progress đã cập nhật, và **chỉ tới
+4. Fix-loop + `Repro Verification` theo `.agent/FEATURE_WORKFLOW.md` §2 và `/bug`: chỉ `done` khi repro PASS + Reviewer PASS.
+5. Retry/Escalation: sau 3 attempt fail → status `architecture_review_needed`, dừng chờ review kiến trúc/refactor.
+6. **Builder** code + test; **Reviewer** kiểm tra độc lập (không sửa source; chỉ ghi report scoped).
+7. **Cập nhật `.context/progress.json`** (schema maintenance) sau mỗi bước đổi trạng thái bug.
+8. **Chỉ commit/push khi Reviewer PASS** + progress đã cập nhật, và **chỉ tới
    `target_branch`** trong `.agent/PROJECT_PROFILE.md`. Reviewer FAIL → không commit/push.
-7. **Danh sách bug** hoặc kết quả `/bug-check`, kể cả "fix tất cả defect" → tách từng bug/task,
+9. **Danh sách bug** hoặc kết quả `/bug-check`, kể cả "fix tất cả defect" → tách từng bug/task,
    tóm tắt số lượng defect, đề xuất thứ tự, nêu bug nào gộp vì cùng root cause, rồi **DỪNG hỏi xác nhận**
    trước khi gọi Builder. Chỉ bỏ checkpoint nếu user ghi rõ `auto proceed`, `khỏi hỏi lại`,
    hoặc `tự xử lý hết không cần hỏi`.
@@ -55,9 +57,11 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 2. Requirement mơ hồ → **hỏi lại**, không tự chọn giả định lớn.
 3. Đổi behavior/scope → cập nhật **spec delta** hoặc ghi rõ lý do không cần.
 4. Tạo `tasks/feature-<slug>/phase-<N>-task-<NN>.md` khi nhiều bước hoặc có risk.
-5. **Builder** code + test; **Reviewer** độc lập; **Spec Validator** cross-check gap so với spec.
-6. **Cập nhật `.context/progress.json`** (schema maintenance).
-7. **Danh sách feature** → tách **mỗi feature thành task riêng**, chốt ưu tiên, xử lý **tuần tự**.
+5. Task phải có `Classification / Risk`, verification summary, và Retry/Escalation theo `/feature` + `.agent/FEATURE_WORKFLOW.md` §3.
+6. Sau 3 attempt fail → status `architecture_review_needed`, dừng chờ review kiến trúc/refactor.
+7. **Builder** code + test; **Reviewer** độc lập; **Spec Validator** cross-check gap so với spec.
+8. **Cập nhật `.context/progress.json`** (schema maintenance).
+9. **Danh sách feature** → tách **mỗi feature thành task riêng**, chốt ưu tiên, xử lý **tuần tự**.
    Gộp chỉ khi cùng mục tiêu/scope (1 feature nhiều phase).
 
 ### Doc Impact & Reconcile Rules

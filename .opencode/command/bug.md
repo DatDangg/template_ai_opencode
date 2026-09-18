@@ -39,15 +39,16 @@ Một bug chỉ được coi là xong khi **original repro không còn tái hi�
    - actual after fix
    - evidence: test/check/manual reasoning kèm file/line nếu không chạy được app
    - status: `PASS` | `FAIL` | `BLOCKED`
+   - với bug race/intermittent/timing: evidence hợp lệ là test deterministic (concurrency/timing) chứng minh FAIL trước fix và PASS sau fix; không bắt buộc tái hiện y hệt bằng tay. Nếu không thể làm deterministic → status `BLOCKED` + residual risk, không tự đóng.
 5. Nếu status là `FAIL` hoặc bug vẫn tái hiện → task **chưa hoàn thành**; quay lại bước diagnose/fix trong cùng task.
 6. Nếu status là `BLOCKED` → không báo đã fix; ghi blocker + residual risk + info cần user cung cấp.
 7. Reviewer phải kiểm tra lại repro evidence. Reviewer FAIL → quay lại Builder, không update `done`, không commit/push.
 
 ## Retry / Escalation Policy
 
-- Attempt 1 fail: gọi/áp dụng Error Analyzer, xác định lại root cause, fix tối thiểu.
+- Attempt 1 fail: áp dụng quy trình trong `.agent/error-analyzer.md` (phần không bị maintenance override), xác định lại root cause, fix tối thiểu.
 - Attempt 2 fail: dừng patch triệu chứng; so với pattern code đang hoạt động và kiểm tra lại assumption.
-- Attempt 3 fail: **KHÔNG thử fix #4**. Set trạng thái `blocked` / `ARCHITECTURE_REVIEW_NEEDED`.
+- Attempt 3 fail: **KHÔNG thử fix #4**. Set trạng thái `architecture_review_needed`.
   Tạo Structural Review trong task/report, gồm:
   - data flow
   - ownership/scope boundary
@@ -73,7 +74,8 @@ Template bắt buộc trong task/report bug:
 Quy tắc bắt buộc:
 1. Không sửa code trước khi có root cause.
 2. Thiếu info (màn hình / bước tái hiện / expected-actual / role) → hỏi ngắn trước.
-3. Tạo/cập nhật task nếu không phải fix 1 dòng (`tasks/bug-<slug>/...`).
+3. Tạo/cập nhật task nếu không phải fix 1 dòng (`tasks/bug-<slug>/...`). Nếu là fix 1 dòng không tạo task,
+   block `Repro Verification` bắt buộc nằm trong entry `docs/history/YYYY-MM.md` của bug đó.
    Task phải có `Classification / Risk`: severity, scope, root cause category, expected review level,
    blast radius, doc impact, decision impact.
 4. Builder code + test; Reviewer kiểm tra độc lập (không sửa source; chỉ ghi report scoped).

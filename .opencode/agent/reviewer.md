@@ -64,8 +64,9 @@ Tự chọn `FAST` / `NORMAL` / `STRICT` và ghi vào report. Mặc định `NOR
 
 Phạm vi review (tùy loại task):
 - **Requirements coverage**: acceptance criteria, edge cases, error states.
-- **Bug repro closure**: với bug task, phải kiểm tra `Repro Verification`. Nếu original repro chưa được
-  verify lại, status không phải `PASS`, hoặc evidence không chứng minh bug đã hết → Verdict bắt buộc `FAIL`.
+- **Bug repro closure**: với bug task, validate `Repro Verification` evidence + automated test/verify command đã cấu hình.
+  Nếu status không phải `PASS`, evidence không chứng minh bug đã hết, hoặc repro chỉ manual/không có evidence kiểm chứng được
+  → Verdict bắt buộc `FAIL` (unverifiable). Không tự chạy app/manual repro ngoài quyền verify commands.
 - **Code quality**: naming, DRY, không over-engineer, file ≤300 dòng / hàm ≤50 dòng.
 - **Security** (`skills/security/*`): input validation, SQLi, XSS, auth/BOLA-IDOR, JWT,
   secrets, CORS, rate limit, mass assignment, SSRF.
@@ -77,7 +78,8 @@ Phạm vi review (tùy loại task):
   responsive 375/768/1280 (`skills/responsive-web/SKILL.md`).
 - **AI-slop gate** (nếu có code): chạy `aislop scan --changes --json`, score ≥ 80 (`skills/aislop/SKILL.md`).
 
-Chạy verify commands trong profile để verify (không hardcode `npm`). Không tin lời builder — tự kiểm.
+Chạy verify commands trong profile để verify (không hardcode `npm`). Không tin lời builder — tự kiểm trong phạm vi command được allow.
+Reviewer không tự chạy app/DB/manual repro; nếu cần evidence nhưng không kiểm chứng được qua report/test/diff thì FAIL (unverifiable).
 Nếu command chưa cấu hình hoặc repo chưa có app code/API/web/test → ghi rõ `skip, no app configured`
 thay vì fail workflow.
 Không dùng bash để search/read source; search/read phải dùng Grep/Glob/Read.
@@ -97,7 +99,7 @@ Trả về report:
 - Verify commands + result: lệnh đã chạy hoặc `skip, no app configured`
 - Findings: issues phân loại **[CRITICAL] / [MAJOR] / [MINOR]**, mỗi issue: file:line + cách fix đề xuất
 - Verdict: ✅ PASS / ❌ FAIL
-- PASS chỉ khi không còn CRITICAL/MAJOR **và**, với bug task, original repro status là `PASS` có evidence.
+- PASS chỉ khi không còn CRITICAL/MAJOR **và**, với bug task, original repro status là `PASS` có evidence kiểm chứng được.
   Ghi report vào `.context/review-reports/`.
 - Nếu subagent không ghi được report vì permission/runtime, primary phải persist nguyên văn report vào đúng path `.context/review-reports/`.
 

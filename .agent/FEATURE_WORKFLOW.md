@@ -52,10 +52,10 @@ Triage → Reproduce → Root cause → Task → Builder → Reviewer PASS
 ### 2.3 Root cause (Iron Law)
 - **KHÔNG fix khi chưa có root cause.** Đọc `skills/superpowers/systematic-debugging.md`.
 - Ghi root cause + evidence (log/stack/trace) vào bug task.
-- ≥3 lần fix fail → nghi ngờ **kiến trúc**, dừng lại, báo human. Không thử fix #4.
+- ≥3 lần fix fail → set status `architecture_review_needed`, nghi ngờ **kiến trúc**, dừng lại, báo human. Không thử fix #4.
 
 ### 2.4 Task
-- Bug **1 dòng, rõ ràng, không risk** → có thể sửa trực tiếp (vẫn phải update progress nếu đổi trạng thái bug).
+- Bug **1 dòng, rõ ràng, không risk** → có thể sửa trực tiếp (vẫn phải update progress nếu đổi trạng thái bug và ghi `Repro Verification` trong `docs/history/YYYY-MM.md`).
 - Còn lại → tạo `tasks/bug-<slug>/phase-<N>-task-<NN>.md` (format §5).
 - Task bug bắt buộc ghi `Classification / Risk`: severity (`blocker|high|medium|low`), scope,
   root cause category, expected review level, blast radius, doc impact, decision impact.
@@ -81,7 +81,7 @@ Chỉ bỏ checkpoint nếu prompt có đúng một trong các cụm: `auto proc
 
 ### 2.7 Progress (bắt buộc)
 - Cập nhật `.context/progress.json` ngay khi bug đổi trạng thái:
-  thêm/cập nhật entry trong `bugs[]` (`status: triaged → reproducing → root_caused → fixing → review → done|blocked`),
+  thêm/cập nhật entry trong `bugs[]` (`status: triaged → reproducing → root_caused → fixing → review → done|blocked|architecture_review_needed`),
   set `activeWorkItem`.
 - Sau Reviewer PASS, xác định Doc Impact & Reconcile (§6) trước khi đóng bug; không impact → ghi `no doc impact`.
 - `done` chỉ khi reviewer PASS, Doc Impact/Reconcile đã xong hoặc ghi `no doc impact`, và report đúng tên tồn tại trong `.context/review-reports/` (§5).
@@ -174,9 +174,9 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 - Test/check fail, acceptance criteria chưa đạt, hoặc behavior sau update chưa khớp spec delta → **chưa xong**;
   quay lại builder cập nhật trong cùng task. Không được báo done chỉ vì đã edit code.
 - Retry / Escalation Policy:
-  - Attempt 1 fail: gọi/áp dụng Error Analyzer, xác định lại root cause, fix tối thiểu.
+  - Attempt 1 fail: áp dụng quy trình trong `.agent/error-analyzer.md` (phần không bị maintenance override), xác định lại root cause, fix tối thiểu.
   - Attempt 2 fail: dừng patch triệu chứng; so với pattern code đang hoạt động và kiểm tra lại assumption.
-  - Attempt 3 fail: **KHÔNG thử fix #4**. Set `blocked` / `ARCHITECTURE_REVIEW_NEEDED`, ghi rõ
+  - Attempt 3 fail: **KHÔNG thử fix #4**. Set status `architecture_review_needed`, ghi rõ
     blocker/residual risk/verify evidence, hỏi human thay vì tự đóng.
   - Structural Review bắt buộc gồm: data flow, ownership/scope boundary, API contract,
     permission/tenant/school filters, state/cache layer, mock/real data boundary, schema/domain mismatch.
@@ -242,16 +242,17 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
   "activeWorkItem": null,
   "features": [
     { "slug": "", "title": "", "type": "ADDITIVE|MODIFY|REMOVE",
-      "status": "planned|in_progress|blocked|done", "currentPhase": 0, "tasks": [] }
+      "status": "planned|in_progress|blocked|architecture_review_needed|done", "currentPhase": 0, "tasks": [] }
   ],
   "bugs": [
     { "slug": "", "title": "", "severity": "blocker|high|medium|low",
-      "status": "triaged|reproducing|root_caused|fixing|review|done|blocked",
+      "status": "triaged|reproducing|root_caused|fixing|review|done|blocked|architecture_review_needed",
       "task": "tasks/bug-<slug>/..." }
   ]
 }
 ```
 - Tối thiểu: `mode`, `activeWorkItem`, `features`, `bugs`. Có thể thêm `lastUpdated` nếu muốn.
+- Status semantics: `blocked` = chặn chung như thiếu info/môi trường; `architecture_review_needed` = đã fail ≥3 attempt, cần review kiến trúc/refactor trước khi sửa tiếp.
 - **KHÔNG** dùng field greenfield (`currentLayer`, `totalLayers`, `completedTasks`, `inProgressTask`, …)
   trong maintenance mode.
 - `activeWorkItem` = `{ type, slug }` của bug/feature đang làm, hoặc `null`.

@@ -24,9 +24,9 @@ Quy tắc bắt buộc:
    - Spec Validator verdict (khi hết phase): PASS | FAIL
 8. **Không set task/feature/phase `done`** nếu verify/test/review/spec status là `FAIL`, `BLOCKED`, hoặc unknown.
 9. Retry / Escalation Policy:
-   - Attempt 1 fail: gọi/áp dụng Error Analyzer, xác định lại root cause, fix tối thiểu.
+   - Attempt 1 fail: áp dụng quy trình trong `.agent/error-analyzer.md` (phần không bị maintenance override), xác định lại root cause, fix tối thiểu.
    - Attempt 2 fail: dừng patch triệu chứng; so với pattern code đang hoạt động và kiểm tra lại assumption.
-   - Attempt 3 fail: **KHÔNG thử fix #4**. Set `BLOCKED` / `ARCHITECTURE_REVIEW_NEEDED`.
+   - Attempt 3 fail: **KHÔNG thử fix #4**. Set status `architecture_review_needed`.
      Tạo Structural Review: data flow, ownership/scope boundary, API contract, permission/tenant/school filters,
      state/cache layer, mock/real data boundary, schema/domain mismatch.
    - Sau Structural Review: hỏi human hoặc tạo task refactor/design riêng trước khi sửa tiếp.

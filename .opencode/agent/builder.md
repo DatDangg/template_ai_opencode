@@ -36,14 +36,17 @@ Quy tắc bắt buộc:
 - Với bug task: **original repro còn tái hiện = chưa hoàn thành**. Không được trả `Task completed: yes`
   nếu repro status là `FAIL`, `BLOCKED`, hoặc chưa verify. Phải tiếp tục diagnose/fix trong cùng task
   cho tới khi repro status `PASS`, hoặc báo blocker thật kèm residual risk.
+- Với bug race/intermittent/timing: evidence hợp lệ là test deterministic (concurrency/timing) chứng minh
+  FAIL trước fix và PASS sau fix. Không bắt buộc tái hiện y hệt bằng tay. Nếu không thể làm deterministic
+  → status `BLOCKED` + residual risk, không tự đóng.
 - Với bug task, completion report bắt buộc có:
   `Original repro`, `Expected`, `Actual before fix`, `Actual after fix`, `Evidence`,
   `Status: PASS|FAIL|BLOCKED`.
 - Retry / Escalation Policy cho bug/feature/update:
-  - Attempt 1 fail: dùng Error Analyzer/root cause, fix tối thiểu.
+  - Attempt 1 fail: áp dụng quy trình trong `.agent/error-analyzer.md` (phần không bị maintenance override), xác định lại root cause, fix tối thiểu.
   - Attempt 2 fail: dừng patch triệu chứng; so với pattern code đang hoạt động và kiểm tra assumption.
-  - Attempt 3 fail: **KHÔNG thử fix #4**. Trả `Task completed: no`, status `BLOCKED` hoặc
-    `ARCHITECTURE_REVIEW_NEEDED`, kèm Structural Review: data flow, ownership/scope boundary,
+  - Attempt 3 fail: **KHÔNG thử fix #4**. Trả `Task completed: no`, status
+    `architecture_review_needed`, kèm Structural Review: data flow, ownership/scope boundary,
     API contract, permission/tenant/school filters, state/cache layer, mock/real data boundary,
     schema/domain mismatch. Hỏi human hoặc đề xuất task refactor/design riêng.
 - **KHÔNG commit / push / deploy / mở PR**. Chỉ primary được commit sau khi Reviewer PASS + progress/doc reconcile/report gate xong.

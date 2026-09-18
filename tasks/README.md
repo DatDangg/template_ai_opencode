@@ -68,7 +68,7 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 - Attempt: 0 | 1 | 2 | 3
 - Last failure type: test_failure | lint_error | build_error | review_fail | runtime_error | n/a
 - Error memory entry: `.context/error-memory.md#entry-...` | none
-- Escalation: NONE | ERROR_ANALYZER | ARCHITECTURE_REVIEW_NEEDED | BLOCKED
+- Escalation: NONE | ERROR_ANALYZER | architecture_review_needed | BLOCKED
 
 ## Repro Verification (bug only)
 - Original repro:
@@ -120,3 +120,5 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
    không phải task; user chọn defect xong mới tạo task `/bug` cho từng defect.
 8. Mọi task bug/feature/update phải có `Classification / Risk`, `Retry / Error Memory`,
    `Verification`, và `Doc / Decision Impact` trước khi Builder bắt đầu.
+9. Bug 1 dòng được `/bug` cho phép sửa không tạo task thì block `Repro Verification` bắt buộc
+   nằm trong entry `docs/history/YYYY-MM.md` của bug đó.
