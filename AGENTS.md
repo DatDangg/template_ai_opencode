@@ -30,7 +30,7 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 | Command | Dùng khi | Tính chất |
 |---|---|---|
 | `/bug-check` | Khu vực/màn mơ hồ, "cảm giác nhiều lỗi" | **READ-ONLY** — soi, liệt kê defect vào `tasks/bug-<slug>/scan.md`, **dừng chờ user chọn**. Không sửa, không commit. |
-| `/bug` | **Một bug đã biết** hoặc list bug đã xác nhận | Diagnose root cause → task → builder → reviewer → progress → commit-first → push target branch nếu được phép |
+| `/bug` | **Một bug đã biết** hoặc list bug đã xác nhận | Diagnose root cause → task → builder → reviewer → progress → commit-first → push theo branch model nếu được phép |
 | `/feature` | Thêm/sửa/bỏ tính năng | Classify ADDITIVE/MODIFY/REMOVE → spec delta → phase/task → builder/reviewer/spec-validator → progress |
 
 ---
@@ -67,6 +67,7 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 ## Commit-First Tracking
 
 - Sau khi task/bug/phase PASS review + close-out + cập nhật `.context/progress.json`, phải commit lên branch hiện tại.
+- Branch model mặc định là **staging-direct**: current branch phải là `target_branch`, commit ở đó và auto-push bằng `git push origin <target_branch>`; nếu user yêu cầu feature branch thì push chính current branch (`git push origin <current-branch>`) và chỉ mở PR khi user yêu cầu rõ.
 - **1 task = 1 commit**, trừ khi có lý do rõ ràng.
 - Commit là source of truth cho changed files, timestamp, SHA, rollback point.
 - Task file là source of truth cho root cause, repro/evidence, residual risk, doc impact/reconcile, verification summary.
@@ -101,7 +102,7 @@ Code ≠ intent → ghi gap vào gap register (nếu có, vd `docs/changes/TECHN
 
 - **Commit** sau PASS theo Commit-First Tracking. `auto_commit_after_pass: true` chỉ cho phép auto-push
   `target_branch` sau PASS; **deploy / mở PR luôn cần user yêu cầu rõ**.
-- **Chỉ push tới `target_branch`** (`.agent/PROJECT_PROFILE.md`). **Cấm push `forbidden_branch`**,
+- **Default staging-direct**: chỉ auto-push `target_branch` khi current branch = `target_branch`; nếu user yêu cầu feature branch thì push current branch và PR chỉ khi user yêu cầu rõ. **Cấm push `forbidden_branch`**,
   cấm `--force` / `-f`. Gate cứng ở `opencode.jsonc` (`permission.bash`).
 - **KHÔNG commit/push khi Reviewer FAIL** hoặc khi progress chưa cập nhật.
 - **KHÔNG tự sửa source khi đang review** — reviewer/spec-validator chỉ được ghi report scoped.

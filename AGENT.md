@@ -7,7 +7,7 @@
 >
 > ⚠️ Mọi hướng dẫn **auto-push** trong file này + `.agent/devops.md` + `.agent/rollback.md`
 > bị **override** bởi maintenance rules (`AGENTS.md` + `FEATURE_WORKFLOW.md`): cấm push
-> `forbidden_branch`, chỉ push `target_branch` khi reviewer PASS + `auto_commit_after_pass: true`.
+> `forbidden_branch`; push theo branch model trong `.agent/FEATURE_WORKFLOW.md` §6.
 
 ## What Is This?
 
@@ -155,7 +155,7 @@ Deploy production → Health check → Done ✅
 - Cross-check toàn bộ layer với `SPECIFICATIONS.md`
 - Đảm bảo features đã build đúng và đủ theo spec ban đầu
 - **PASS** → DevOps push layer → Human checkpoint
-  ⚠️ Ở **maintenance mode**, push bị override: chỉ push `target_branch` khi reviewer PASS + `auto_commit_after_pass: true`.
+  ⚠️ Ở **maintenance mode**, push bị override theo branch model trong `.agent/FEATURE_WORKFLOW.md` §6.
 - **FAIL** → trả về Loop với danh sách gaps → fix → Layer Review lại
 
 > 👀 **HUMAN CHECKPOINT — End of Each Layer**

@@ -1,10 +1,10 @@
 # Rollback Agent — Git Checkpoint Strategy
 
-> ⚠️ **Maintenance mode override:** state dùng `features[]`/`bugs[]`; **KHÔNG** ghi/đọc `currentLayer` khi ở maintenance mode; **cấm push thẳng `forbidden_branch`** (mặc định `main`); branch/commit theo `feature/<slug>` | `bug/<slug>`. Workflow hiện hành: `.agent/FEATURE_WORKFLOW.md` + `AGENTS.md` (ưu tiên). Phần greenfield dưới đây chỉ dùng khi build từ đầu.
+> ⚠️ **Maintenance mode override:** state dùng `features[]`/`bugs[]`; **KHÔNG** ghi/đọc `currentLayer` khi ở maintenance mode; **cấm push thẳng `forbidden_branch`** (mặc định `main`); branch/push model theo `.agent/FEATURE_WORKFLOW.md` §6 (default staging-direct). Workflow hiện hành: `.agent/FEATURE_WORKFLOW.md` + `AGENTS.md` (ưu tiên). Phần greenfield dưới đây chỉ dùng khi build từ đầu.
 
 > ⚠️ **Maintenance push override:** Maintenance mode overrides all literal push examples below.
 > Do NOT push `main`/`develop` from these examples. Auto-push after PASS review must use
-> `git push origin <target_branch>` where `<target_branch>` comes from `.agent/PROJECT_PROFILE.md`.
+> branch model in `.agent/FEATURE_WORKFLOW.md` §6 (default: `git push origin <target_branch>` only from `target_branch`).
 > Bare `git push` is denied by `opencode.jsonc`. Production/main promotion requires explicit
 > human approval outside normal maintenance workflow.
 
