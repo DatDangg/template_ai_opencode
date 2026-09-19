@@ -18,7 +18,6 @@
 
 | File | Ghi chú |
 |------|---------|
-| `history/YYYY-MM.md` | Legacy/optional/generated-only change log; không dùng làm close-out gate |
 | `diagrams/` | Diagram minh họa (archify) — verify với code trước khi tin |
 
 ## Optional: manual classification hint
@@ -41,4 +40,4 @@ Nếu muốn bỏ auto-detect, điền:
 ## Quy tắc
 
 - **Không nhúng code/schema tay** vào docs canonical → dùng pointer + `docs/generated/`.
-- Mọi thay đổi code/config/docs/schema → commit-first tracking; `docs/history/` chỉ legacy/optional/generated-only.
+- Mọi thay đổi code/config/docs/schema → commit-first tracking là source of truth.

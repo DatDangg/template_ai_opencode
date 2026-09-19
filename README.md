@@ -94,8 +94,7 @@ project-template/
 │   ├── API_SPEC.md               ← API overview + pointer (no hand-embedded code)
 │   ├── ERD.md                    ← Schema overview + pointer
 │   ├── PERMISSION.md             ← Roles + guard order (synced from code)
-│   ├── generated/                ← AUTO-GENERATED inventory (do not edit)
-│   └── history/YYYY-MM.md        ← Legacy/optional/generated-only change log
+│   └── generated/                ← AUTO-GENERATED inventory (do not edit)
 │
 ├── scripts/
 │   ├── generate-inventory.mjs         ← Deterministic inventory generator

@@ -73,7 +73,7 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 - Task file là source of truth cho root cause, repro/evidence, residual risk, doc impact/reconcile, verification summary.
 - `.context/progress.json` là source of truth cho current status, active/completed phase/task, reviewer result/report path.
 - Commit message convention và body trailer: xem `.agent/FEATURE_WORKFLOW.md` §2.8.
-- Manual `docs/history/YYYY-MM.md` sau mỗi task đã chuyển thành legacy/optional/generated-only.
+- Commit-first tracking là source of truth; không còn `docs/history/YYYY-MM.md` (đã xoá).
 
 ### Doc Impact & Reconcile Rules
 
