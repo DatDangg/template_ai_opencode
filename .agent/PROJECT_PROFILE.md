@@ -3,6 +3,9 @@
 > **Điền file này khi clone template.** Mọi workflow/subagent đọc giá trị ở đây,
 > KHÔNG hardcode branch / package manager / DB / lệnh check trong generic docs.
 > Nếu file còn placeholder (`<...>`) → coi như chưa cấu hình, phải hỏi user.
+>
+> 💡 Cách nhanh: chạy `/setup-profile` — auto-detect stack rồi hỏi branch/DB và ghi file này,
+> kèm sync quyền verify command cho reviewer/spec-validator.
 
 ## Profile
 
@@ -11,10 +14,10 @@ project: <tên dự án>
 output_language: vi            # vi | en — ngôn ngữ cho docs/summary
 
 # ── Git ──
-target_branch: <target_branch> # branch đích để push sau commit-first PASS; chưa điền = hỏi user
+target_branch: <target_branch> # default staging-direct: current branch phải là branch này khi commit/push PASS; chưa điền = hỏi user
 forbidden_branch: main         # cấm push trực tiếp (opencode.jsonc hard-deny main/ref main)
-branch_pattern: "feature/<slug>|bug/<slug>"
-auto_commit_after_pass: false  # legacy name; true = tự push target_branch sau commit-first PASS + progress xong
+branch_pattern: "<target_branch>" # default staging-direct; feature/<slug>|bug/<slug> chỉ khi user yêu cầu feature branch
+auto_commit_after_pass: false  # @deprecated name — ý nghĩa thật là AUTO-PUSH: commit sau PASS luôn bắt buộc; true = tự `git push origin <target_branch>` sau PASS
 
 # ── Package / source ──
 package_manager: <none|pnpm|npm|yarn|bun>  # none/chưa điền = không hardcode lệnh
@@ -35,8 +38,8 @@ migration_command: null     # only used when db_tool != none and migration_requi
 # ── Database ──
 db_tool: none                  # none | prisma | drizzle | other
 migration_required: false      # true nếu cần migration versioned (chỉ khi db_tool != none)
-staging_db: <tên DB staging>
-prod_db: <tên DB production>
+staging_db: <env var staging, vd DATABASE_URL_STAGING>   # TÊN ENV VAR, không phải connection string/secret
+prod_db: <env var production, vd DATABASE_URL_PROD>       # TÊN ENV VAR; phải khác staging_db
 destructive_migration_policy: HIGH_RISK_MIGRATION
 ```
 

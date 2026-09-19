@@ -1,6 +1,6 @@
 # Brainstorm Agent
 
-> ⚠️ **Maintenance mode override:** state dùng `features[]`/`bugs[]`; **KHÔNG** ghi/đọc `currentLayer` khi ở maintenance mode; **cấm push thẳng `forbidden_branch`** (mặc định `main`); branch/commit theo `feature/<slug>` | `bug/<slug>`. Workflow hiện hành: `.agent/FEATURE_WORKFLOW.md` + `AGENTS.md` (ưu tiên). Phần greenfield dưới đây chỉ dùng khi build từ đầu.
+> ⚠️ **Maintenance mode override:** state dùng `features[]`/`bugs[]`; **KHÔNG** ghi/đọc `currentLayer` khi ở maintenance mode; **cấm push thẳng `forbidden_branch`** (mặc định `main`); branch/push model theo `.agent/FEATURE_WORKFLOW.md` §6 (default staging-direct). Workflow hiện hành: `.agent/FEATURE_WORKFLOW.md` + `AGENTS.md` (ưu tiên). Phần greenfield dưới đây chỉ dùng khi build từ đầu.
 
 ## Role
 Thu thập requirements từ user qua conversation. Hỏi từng câu một, không hỏi nhiều câu cùng lúc.
@@ -307,7 +307,35 @@ EOF
 
 ---
 
-### 0.5.E — Confirm Setup
+### 0.5.E — Project Profile
+
+> Điền `.agent/PROJECT_PROFILE.md` để workflow biết branch/package manager/verify commands/DB.
+> Chạy `/setup-profile` sẽ làm các bước dưới tự động (detect + hỏi + ghi file + sync quyền verify command).
+> Bước này cũng cần cho maintenance mode trên repo có sẵn.
+
+**1. Auto-detect** (không hỏi): chạy `node scripts/detect-profile.mjs` → package manager, source roots,
+scripts (`test/lint/typecheck/build`), `db_tool`, `migration_required`.
+
+**2. Hỏi bắt buộc** (từng câu một):
+1. `target_branch` — branch đích commit/push.
+2. `forbidden_branch` — mặc định `main`, chỉ confirm.
+3. `auto_commit_after_pass` — `true|false`; đây là **auto-push**, commit sau PASS luôn bắt buộc.
+
+**3. Confirm detect**: stack, `package_manager`, `source_roots`, verify commands (sửa nếu sai).
+
+**4. Nếu có DB** (`db_tool != none`): confirm `db_tool`/`migration_required`; hỏi `staging_db`/`prod_db`
+là **tên env var** (không ghi secret), bắt buộc `staging_db != prod_db`; hỏi `migration_command` nếu có.
+
+**5. Ghi** `.agent/PROJECT_PROFILE.md` (giữ cấu trúc + comment), rồi sync allow rule:
+chạy `node scripts/apply-verify-permissions.mjs` (dry-run) → xem danh sách bỏ qua → `--write` để ghi
+vào `reviewer.md`/`spec-validator.md`. Command không an toàn (shell meta, DB-destructive, wildcard,
+deploy) không được auto-allow; exit code khác 0 (thiếu marker) → dừng, báo chưa hoàn tất.
+
+> Nếu repo chưa có app code/command → giữ `null`; workflow ghi `skip, no app configured`, không bịa lệnh.
+
+---
+
+### 0.5.F — Confirm Setup
 
 Sau khi điền xong, hiển thị tóm tắt:
 
@@ -317,6 +345,8 @@ Sau khi điền xong, hiển thị tóm tắt:
 📁 Git:      <platform> — <username>/<repo_name> (<visibility>)
 🚀 Deploy:   <platform> → <host_or_project>
 ⚙️  CI/CD:    <github-actions|gitlab-ci|skip>
+📦 Profile:  target=<target_branch> · forbidden=<forbidden_branch> · auto-push=<true|false>
+             pm=<package_manager> · test=<test_command> · db=<db_tool>
 🤖 Models:   đã ghi vào .agent/PROJECT_PROFILE.md + .opencode/agent/*.md
    • builder:        <model>
    • builder-strong: <model>

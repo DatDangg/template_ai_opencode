@@ -82,6 +82,7 @@ project-template/
 │   │   ├── reviewer.md           ← Independent review (edit: deny)
 │   │   └── spec-validator.md     ← Spec/phase cross-check (edit: deny)
 │   └── command/
+│       ├── setup-profile.md      ← /setup-profile → onboarding repo thật (PROJECT_PROFILE)
 │       ├── bug-check.md          ← /bug-check → read-only sweep, list defects
 │       ├── bug.md                ← /bug  → fix ONE known bug
 │       └── feature.md            ← /feature → Change Request workflow
@@ -97,7 +98,9 @@ project-template/
 │   └── history/YYYY-MM.md        ← Legacy/optional/generated-only change log
 │
 ├── scripts/
-│   └── generate-inventory.mjs    ← Deterministic inventory generator
+│   ├── generate-inventory.mjs         ← Deterministic inventory generator
+│   ├── detect-profile.mjs             ← Detect stack → gợi ý PROJECT_PROFILE (dùng bởi /setup-profile)
+│   └── apply-verify-permissions.mjs   ← Sync allow rule verify command vào reviewer/spec-validator
 │
 ├── .agent/
 │   ├── FEATURE_WORKFLOW.md       ← ✅ Maintenance entry (bug/feature/update)
@@ -362,23 +365,25 @@ Done ✅ → Extract patterns → Update common-errors.md
 # 1. Clone/copy template vào máy
 git clone <template-repo-url> template && cd template
 
-# 2. Điền thông tin project → .agent/PROJECT_PROFILE.md
-#    (target_branch, forbidden_branch, auto_commit_after_pass, package_manager,
-#     verify commands, db_tool, migration_required, models)
-
-# 3. Khai model theo vai trong .agent/PROJECT_PROFILE.md (models:) rồi BỎ COMMENT
-#    dòng `model:` trong .opencode/agent/*.md
-
-# 4. Mở opencode
+# 2. Mở opencode
 opencode
+
+# 3. Trong opencode, chạy /setup-profile để auto-detect stack + hỏi branch/DB,
+#    ghi .agent/PROJECT_PROFILE.md và sync quyền verify command.
+#    Hoặc điền tay: target_branch, forbidden_branch, auto_commit_after_pass,
+#    package_manager, verify commands, db_tool, migration_required.
+
+# 4. Khai model theo vai trong .agent/PROJECT_PROFILE.md (models:) rồi BỎ COMMENT
+#    dòng `model:` trong .opencode/agent/*.md
 
 # 5. RESTART opencode sau khi sửa .opencode/ (config KHÔNG hot-reload)
 ```
 
 | Command | Khi nào dùng |
 |---|---|
+| `/setup-profile` | Onboarding repo thật — auto-detect stack, hỏi branch/DB, ghi `.agent/PROJECT_PROFILE.md`, sync quyền verify command |
 | `/bug-check <khu vực>` | Chưa rõ bug nào — soi **read-only**, liệt kê defect vào `tasks/bug-<slug>/scan.md`, dừng chờ bạn chọn |
-| `/bug <mô tả>` | **Một bug đã biết** hoặc list bug đã xác nhận — root cause → build → reviewer → progress → commit-first → push `target_branch` nếu được phép |
+| `/bug <mô tả>` | **Một bug đã biết** hoặc list bug đã xác nhận — root cause → build → reviewer → progress → commit-first → push theo branch model nếu được phép |
 | `/feature <mô tả>` | Thêm/sửa/bỏ tính năng — classify → spec delta → phase/task → build/review/validate |
 
 Nếu repo chưa có app code/API/web/test hoặc verify command chưa cấu hình, workflow ghi `skip, no app configured`
@@ -477,9 +482,11 @@ model, writes `.agent/PROJECT_PROFILE.md` (`models:`), and fills the frontmatter
 ### Branch Strategy
 
 ```
-main        ← production
-develop     ← staging
-feature/*   ← one branch per task
+Default maintenance: staging-direct
+target_branch ← current branch for commit-first close-out and auto-push
+
+Optional by user request only:
+feature/* or bug/* ← push current branch; open PR only when explicitly requested
 ```
 
 ### CI/CD Templates

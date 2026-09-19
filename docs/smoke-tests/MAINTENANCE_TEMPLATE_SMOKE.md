@@ -107,6 +107,8 @@ Expected:
 - `git push origin <target_branch>` phải allow khi `<target_branch>` không phải main/forbidden/delete/force.
 - `git push origin main` phải deny.
 - `git push origin HEAD:refs/heads/main` phải deny.
+- `git push --all origin`, `git push origin --all`, `git push --mirror origin`, `git push origin --mirror` phải deny.
+- `git push origin refs/heads/*:refs/heads/*` và bản `+refs/heads/*:refs/heads/*` phải deny (aggregate refspec), nhưng `git push origin feature/x` vẫn allow.
 - `git push --force` và `git push -f` phải deny.
 - `git push origin --force` và `git push origin --force-with-lease` phải deny.
 - `git push origin --delete main` và `git push origin :main` phải deny.
@@ -137,6 +139,8 @@ Expected:
 - Nếu `db_tool != none` và `migration_required: true` → migration phải versioned, không sửa migration đã apply.
 - Trước commit inspect migration artifact; destructive/high-risk op gắn `HIGH_RISK_MIGRATION` và không promote production.
 - Cấm `db push`, `migrate reset`, seed/reset, clone/sync data staging/prod.
+- Permission gate phải deny các shortcut destructive phổ biến: `prisma db push`, `drizzle-kit push`, `prisma migrate reset`, `prisma db seed`, `supabase db reset`, `npm/pnpm run db:push|db:reset|db:seed`.
+- Builder/builder-strong phải deny các lệnh trên kể cả khi agent-level `bash."*": allow` được merge sau global.
 - `staging_db` khác `prod_db`; flow dev → versioned migration → staging deploy → verify → promote đúng migration đã test.
 
 ## I. Commit/Report Close-Out Smoke
@@ -146,8 +150,24 @@ Expected:
 - Reviewer FAIL → không commit/push.
 - Trước commit phải `git status` + `git diff`; chỉ stage file thuộc task, không stage dirty cũ ngoài scope.
 - Nếu shared file interleave nhiều scope, chỉ combined batch commit cho đúng epic và ghi rõ lý do.
-- Reviewer report đúng tên `.context/review-reports/<feature|bug>-<slug>-phase-<N>-review.md`.
+- Task reviewer report đúng tên `.context/review-reports/<feature|bug>-<slug>-phase-<N>-task-<NN>-review.md`.
+- Phase/spec-validator report có thể dùng `.context/review-reports/<feature|bug>-<slug>-phase-<N>-review.md`.
 - Trước status `done`, grep/check report theo slug; không có report → không đóng việc.
+
+## J. Setup Profile Smoke
+
+Expected:
+- `node scripts/detect-profile.mjs` chạy offline, không mutate file, in JSON gợi ý (`package_manager`, `source_roots`, `commands`, `db_tool`).
+- `node scripts/apply-verify-permissions.mjs` mặc định **dry-run** (không ghi); `--write` mới sửa block `# verify-commands:start/end`.
+- Chạy `--write` 2 lần liên tiếp → lần 2 `unchanged` (idempotent).
+- Placeholder (`<...>`), `null`, `skip...` trong profile không sinh allow rule.
+- Command chứa quote/backslash/newline, shell metacharacter (`; & | \` $ ( ) { } < > *`), DB-destructive (gồm `drizzle-kit push`), git-mutating, `rm -rf`, `deploy`, hoặc `--force` → bị **bỏ qua** kèm lý do, không sinh allow rule.
+- Pattern sinh ra là **exact** (không nối `*`) nên `cmd && lệnh phá hoại` không lọt theo.
+- `migration_command` không bao giờ được auto-allow.
+- Thiếu marker `# verify-commands:start/end` → script cảnh báo và exit code khác 0.
+- `/setup-profile` không ghi secret vào `.agent/PROJECT_PROFILE.md`; `staging_db`/`prod_db` chỉ là tên env var.
+- `staging_db == prod_db` → dừng, báo `blocked`, không ghi profile.
+- Sau khi sync quyền/sửa `.opencode/*` → phải nhắc restart opencode.
 
 ## No-App Verify Rule
 

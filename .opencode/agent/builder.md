@@ -8,8 +8,19 @@ temperature: 0.1
 permission:
   bash:
     "*": allow
+    # Agent rule được merge SAU global nên phải re-declare deny phá hoại tại đây.
+    "*prisma db push*": deny
+    "*drizzle-kit push*": deny
+    "*prisma migrate reset*": deny
+    "*prisma db seed*": deny
+    "*supabase db reset*": deny
+    "*db:push*": deny
+    "*db:reset*": deny
+    "*db:seed*": deny
     "git commit*": deny
     "git push*": deny
+    "git reset --hard*": deny
+    "git checkout --*": deny
 ---
 
 Bạn là **Builder** — kỹ sư implement đúng 1 task, không hơn.

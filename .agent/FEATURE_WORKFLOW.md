@@ -36,7 +36,8 @@ Không rõ intent → hỏi 1 câu ngắn. **Không tự phân loại thành "ch
 
 ```
 Triage → Reproduce → Root cause → Task → Builder → Reviewer PASS
-   → Doc Impact/Reconcile → progress.json → commit current branch → (push target_branch nếu được phép)
+   → Doc Impact/Reconcile → progress.json → commit current branch (= target_branch mặc định)
+   → (push current branch nếu được phép)
 ```
 
 ### 2.1 Triage (bắt buộc trước khi sửa)
@@ -84,7 +85,7 @@ Chỉ bỏ checkpoint nếu prompt có đúng một trong các cụm: `auto proc
   thêm/cập nhật entry trong `bugs[]` (`status: triaged → reproducing → root_caused → fixing → review → done|blocked|architecture_review_needed`),
   set `activeWorkItem`.
 - Sau Reviewer PASS, xác định Doc Impact & Reconcile (§6) trước khi đóng bug; không impact → ghi `no doc impact`.
-- `done` chỉ khi reviewer PASS, Doc Impact/Reconcile đã xong hoặc ghi `no doc impact`, report đúng tên tồn tại trong `.context/review-reports/` (§5), và commit sau PASS close-out đã tồn tại.
+- Set `done` sau khi reviewer PASS, Doc Impact/Reconcile đã xong hoặc ghi `no doc impact`, và report đúng tên tồn tại trong `.context/review-reports/` (§5). Trạng thái `done`/progress/doc-impact này phải nằm trong close-out commit; progress/task file không cần biết SHA của commit đang được tạo.
 
 ### 2.8 Commit / push (commit-first)
 - Sau khi task/bug/phase PASS review + close-out + cập nhật `.context/progress.json`, phải commit lên branch hiện tại theo convention bên dưới.
@@ -114,8 +115,8 @@ Chỉ bỏ checkpoint nếu prompt có đúng một trong các cụm: `auto proc
   ```
   Repro-Verification: <short evidence of root cause + expected/actual>
   ```
-- Chỉ push tới **`target_branch`** (`.agent/PROJECT_PROFILE.md`). Tuyệt đối không push
-  `forbidden_branch`; không `--force`/`-f` (đã chặn ở `opencode.jsonc`).
+- Branch model: default **staging-direct** nghĩa là commit trên current branch khi current branch = `target_branch` và push bằng `git push origin <target_branch>`; nếu user yêu cầu feature branch thì commit/push chính current feature branch bằng `git push origin <current-branch>` và chỉ mở PR khi user yêu cầu rõ.
+- Tuyệt đối không push `forbidden_branch`; không `--force`/`-f` (đã chặn ở `opencode.jsonc`).
 - Push chỉ khi user yêu cầu rõ hoặc `auto_commit_after_pass: true` trong `.agent/PROJECT_PROFILE.md`; Reviewer FAIL / progress chưa xong → **không** commit/push.
 - Không hardcode tên branch — luôn đọc từ profile.
 
@@ -165,7 +166,7 @@ Quy tắc bắt buộc:
 ```
 Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
    → Loop(builder/reviewer) → Phase Review → Doc Impact/Reconcile → Progress
-   → commit current branch → (push target_branch nếu được phép)
+   → commit current branch (= target_branch mặc định) → (push current branch nếu được phép)
 ```
 
 ### 3.1 Classify
@@ -179,6 +180,7 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 
 ### 3.3 Spec Validator
 - Gọi subagent `spec-validator` (không sửa source; chỉ được ghi report scoped) cross-check delta vs spec & docs.
+- Ghi report pre-plan: `.context/review-reports/feature-<slug>-spec-validation.md`.
 - FAIL → quay lại làm rõ. PASS → chia phase/task.
 
 ### 3.4 Phase / Task
@@ -220,10 +222,10 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 ### 3.9 Progress (bắt buộc)
 - Update `.context/progress.json`: thêm/cập nhật entry trong `features[]`, set `activeWorkItem`.
 - Trước khi set feature/phase/task `done`, phải có acceptance PASS, verify commands PASS/skip có lý do,
-  Reviewer PASS, Spec Validator PASS khi hết phase, hoàn tất Doc Impact & Reconcile (§6) hoặc ghi `no doc impact`,
-  và commit sau PASS close-out đã tồn tại.
+  Reviewer PASS, Spec Validator PASS khi hết phase, và hoàn tất Doc Impact & Reconcile (§6) hoặc ghi `no doc impact`.
+  Trạng thái `done`/progress/doc-impact này phải nằm trong close-out commit; progress/task file không cần biết SHA của commit đang được tạo.
 - Nếu test/check/review/spec status là `FAIL`, `BLOCKED`, hoặc unknown → không set `done`.
-- Commit/push: xem §2.8 (commit-first sau PASS; push chỉ khi được phép và chỉ tới `target_branch`).
+- Commit/push: xem §2.8 (commit-first sau PASS; default staging-direct push `target_branch`, feature branch chỉ khi user yêu cầu).
 
 ---
 
@@ -288,17 +290,19 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 - Bug task phải có `Repro Verification`; feature/update task phải có `Feature Verification`.
 
 ### Review report
-- Reviewer report phải đúng tên: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-review.md`.
+- Task reviewer report phải đúng tên: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-task-<NN>-review.md`.
+- Phase-level/spec-validator report khi hết phase: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-review.md`.
+- Pre-plan spec validation (trước khi chia phase/task): `.context/review-reports/feature-<slug>-spec-validation.md`.
 - Trước khi set status `done`: kiểm tra report tồn tại bằng slug/path. Không có report → **KHÔNG đóng việc**.
 
 ## 6. Cổng chặn (gates)
 
-- **Branch**: tạo `feature/<slug>` hoặc `bug/<slug>`; chỉ push **`target_branch`**;
-  **cấm push `forbidden_branch`**, cấm `--force`/`-f` (gate ở `opencode.jsonc` → `permission.bash`).
+- **Branch**: default **staging-direct**: làm việc trực tiếp trên `target_branch`; current branch phải là `target_branch` trước khi commit/push. Nếu user yêu cầu feature branch, làm việc trên branch hiện tại (`feature/<slug>` hoặc `bug/<slug>`), push chính branch đó, và chỉ mở PR khi user yêu cầu rõ.
+  **Cấm push `forbidden_branch`**, cấm `--force`/`-f` (gate ở `opencode.jsonc` → `permission.bash`).
 - **Commit-first close-out**: sau task/bug/phase PASS review + Doc Impact/Reconcile + progress xong,
   commit lên branch hiện tại theo §2.8. FAIL → không commit/push.
 - **Push**: mặc định không. Chỉ khi user yêu cầu rõ hoặc `auto_commit_after_pass: true`
-  (`.agent/PROJECT_PROFILE.md`), và chỉ tới `target_branch`.
+  (`.agent/PROJECT_PROFILE.md`), theo branch model ở §2.8/§6.
 - **Commit hygiene**: trước commit phải `git status` + `git diff`; chỉ stage file thuộc task;
   không stage dirty cũ ngoài scope. Nếu shared file interleave nhiều scope khiến tách commit không an toàn,
   chỉ combined batch commit cho đúng epic đó và ghi rõ lý do.
@@ -316,9 +320,13 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 - **UI**: responsive 375/768/1280; a11y; đo contrast; không slop (skills UI).
 - **Progress bắt buộc**: mọi thay đổi trạng thái bug/feature → update `.context/progress.json`.
 - **Close-out report gate**: trước status `done`, grep/check `.context/review-reports/` theo slug và đúng tên
-  `<feature|bug>-<slug>-phase-<N>-review.md`. Không có report → status `blocked`, không commit/push.
-- **Commit gate**: trước khi báo task/bug/phase `done`, commit sau PASS close-out phải tồn tại. Nếu chưa commit được
-  thì status phải là `blocked` + residual risk/lý do (ví dụ progress chưa xong, dirty unrelated changes không thể tách an toàn), không được set `done`.
+  `<feature|bug>-<slug>-phase-<N>-task-<NN>-review.md` cho task review; phase/spec-validator review dùng
+  `<feature|bug>-<slug>-phase-<N>-review.md`. Với feature, kiểm tra thêm report pre-plan
+  `feature-<slug>-spec-validation.md`. Không có report → status `blocked`, không commit/push.
+- **Commit gate**: sau Reviewer PASS + Doc Impact/Reconcile + report gate, set progress/task status `done`
+  như một phần của close-out commit. Trước final response, HEAD commit phải tồn tại và bao gồm trạng thái
+  `done`/progress/doc-impact close-out đó. Progress/task file không cần biết SHA của commit đang được tạo.
+  Nếu không tạo được commit sau PASS close-out, không báo complete; giữ/set status `blocked` và ghi residual risk/lý do.
 - **Doc reconcile**: sau task/bug/phase PASS và trước status `done`, xác định doc impact và reconcile as-built docs:
   API contract/endpoint/response shape → `docs/API_SPEC.md`; schema/model/enum → `docs/ERD.md` + regen
   `docs/generated/*` nếu có; kiến trúc/flow/current behavior → `docs/DESIGN.md` current-state; gap đã giải quyết

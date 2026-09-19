@@ -25,10 +25,19 @@
 
       // --- Cấm push trần: automation phải dùng explicit target branch từ PROJECT_PROFILE ---
       "git push": "deny",
-      "git push origin": "deny",
 
       // --- Cho phép push explicit target branch generic; deny hẹp bên dưới vẫn override ---
+      // Lưu ý: `git push origin *` khớp cả push trần, nên phải deny lại `git push origin` ngay sau đó.
       "git push origin *": "allow",
+      "git push origin": "deny",
+
+      // --- Cấm push aggregate/mirror/refspec force vì có thể đẩy main/refs khác mà command không chứa "main" ---
+      "git push --all*": "deny",
+      "git push * --all*": "deny",
+      "git push --mirror*": "deny",
+      "git push * --mirror*": "deny",
+      "git push*+refs/heads/*": "deny",
+      "git push*refs/heads/*:refs/heads/*": "deny",
 
       // --- Cấm push thẳng main (mọi biến thể, kể cả refspec refs/heads/main) ---
       "git push* main*": "deny",
@@ -51,7 +60,18 @@
 
       // --- Cấm phá hoại working tree ---
       "git reset --hard*": "deny",
-      "git checkout --*": "deny"
+      "git checkout --*": "deny",
+
+      // --- Cấm DB/migration destructive shortcuts; dùng migration versioned theo PROJECT_PROFILE ---
+      // Chỉ match command đặc trưng để không chặn nhầm commit message/prose.
+      "*prisma db push*": "deny",
+      "*drizzle-kit push*": "deny",
+      "*prisma migrate reset*": "deny",
+      "*prisma db seed*": "deny",
+      "*supabase db reset*": "deny",
+      "*db:push*": "deny",
+      "*db:reset*": "deny",
+      "*db:seed*": "deny"
 
       // Bare git push is denied. Automation must use explicit target branch from PROJECT_PROFILE:
       // `git push origin <target_branch>`.
@@ -59,9 +79,10 @@
       // add a local deny rule for the real forbidden branch if it is not `main`.
 
       // --- Template generic: KHÔNG hardcode target_branch ở đây.
-      //     Nếu project muốn allow hẹp hơn, điền tên branch thật trong PROJECT_PROFILE rồi thêm rule local:
-      // "git push origin <target_branch>*": "allow",
+      //     Nếu project muốn allow hẹp hơn, điền tên branch thật trong PROJECT_PROFILE rồi thêm rule local
+      //     đặt TRƯỚC các deny main/force để không vô tình mở lại force-push:
       // "git push -u origin <target_branch>*": "allow",
+      // "git push origin <target_branch>*": "allow",
     }
   }
 }

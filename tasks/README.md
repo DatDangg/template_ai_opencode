@@ -62,7 +62,7 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 ## Verification Plan
 - Commands: <from `.agent/PROJECT_PROFILE.md` or `skip, no app configured`>
 - Manual/UAT evidence: <if needed>
-- Reviewer report path: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-review.md`
+- Reviewer report path: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-task-<NN>-review.md`
 
 ## Retry / Error Memory
 - Attempt: 0 | 1 | 2 | 3
@@ -89,7 +89,7 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 - Decision log: `.context/decisions.md#...` | none
 
 ## Commit / Tracking
-- Commit: <sha after PASS commit | pending>
+- Commit: pending until close-out commit (SHA lives in git history; do not amend/backfill just to fill this)
 - Commit source of truth: changed files, timestamp, SHA, rollback point
 - Task source of truth: root cause, repro/evidence, residual risk, doc impact/reconcile, verification summary
 - Progress source of truth: `.context/progress.json` current status, active/completed phase/task, reviewer result/report path
@@ -103,7 +103,7 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 - [ ] Error Memory updated for every failed attempt, or `n/a` recorded
 - [ ] Doc Impact reconciled, or `no doc impact` recorded
 - [ ] Decision log updated if `Decision impact: YES`
-- [ ] Commit created after PASS close-out (1 task = 1 commit, unless reason recorded)
+- [ ] Commit created after PASS close-out (1 task = 1 commit, unless reason recorded; SHA tracked by git)
 
 ## Files to Create/Modify
 - `<path>`

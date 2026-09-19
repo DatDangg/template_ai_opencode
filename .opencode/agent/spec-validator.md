@@ -10,7 +10,9 @@ permission:
     "*": deny
     ".context/review-reports/**": allow
   bash:
-    "*": ask
+    "*": deny
+    # verify-commands:start — auto-generated từ .agent/PROJECT_PROFILE.md (scripts/apply-verify-permissions.mjs)
+    # verify-commands:end
     "pnpm *typecheck*": allow
     "pnpm *lint*": allow
     "pnpm *test*": allow
