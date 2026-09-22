@@ -5,6 +5,7 @@ mode: subagent
 # Để comment = kế thừa model chính.
 # model: <provider>/<model-ho-thu-3>
 temperature: 0.1
+steps: 20
 permission:
   edit:
     "*": deny
@@ -74,7 +75,8 @@ Trả về:
 - Verdict: ✅ PASS / ❌ FAIL (hoặc ✅ COMPLETE / ⚠️ GAPS FOUND cho phase review).
 - Ma trận coverage (requirement | source | status | note), **cite nguồn cụ thể**.
 - Gaps: [MISSING] / [PARTIAL], kèm requirement + task liên quan.
-- Ghi report vào `.context/review-reports/`.
+- Ghi report vào đúng tên: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-round-<R>-review.md` (hoặc
+  `-spec.md` cho pre-plan). Luôn ghi rõ `round-<R>`; không gộp nhiều vòng vào một file; rerun cùng round → **ghi đè**.
 - Nếu subagent không ghi được report vì permission/runtime, primary phải persist nguyên văn report vào đúng path `.context/review-reports/`.
 
 Không tự thêm requirement, không tự sửa. FAIL → trả gap list cho builder/loop.

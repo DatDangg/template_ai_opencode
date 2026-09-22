@@ -5,6 +5,7 @@ mode: subagent
 # Để comment = kế thừa model chính.
 # model: <provider>/<model-khac-ho>
 temperature: 0.1
+steps: 30
 permission:
   edit:
     "*": deny
@@ -95,6 +96,10 @@ Tool Loop Guard:
 - Bash bị permission deny → **DỪNG NGAY**: không retry, không đổi biến thể, không vòng qua pipeline;
   chuyển Grep/Read hoặc ghi `Blocked`.
 - Không xác minh được → ghi `Residual risk`/`Blocked`, không lặp tool.
+- Giới hạn tool đọc `Glob`/`Grep`/`Read` (tách biệt với cap verify shell commands): FAST tối đa 8,
+  NORMAL tối đa 15, STRICT tối đa 25.
+  - `Glob` trả empty hoặc > 50 kết quả → ghi `Residual risk` và **DỪNG**; không đổi pattern rồi lặp lại.
+  - Vượt cap tool đọc → ghi `Residual risk` thay vì chạy tiếp.
 
 Trả về report:
 - Review level: `FAST` / `NORMAL` / `STRICT`
@@ -104,7 +109,9 @@ Trả về report:
 - Findings: issues phân loại **[CRITICAL] / [MAJOR] / [MINOR]**, mỗi issue: file:line + cách fix đề xuất
 - Verdict: ✅ PASS / ❌ FAIL
 - PASS chỉ khi không còn CRITICAL/MAJOR **và**, với bug task, original repro status là `PASS` có evidence kiểm chứng được.
-  Ghi report vào `.context/review-reports/`.
+- Ghi report vào đúng tên: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-task-<NN>-round-<R>-review.md`
+  (phase-level: `<feature|bug>-<slug>-phase-<N>-round-<R>-review.md`). Luôn ghi rõ `round-<R>`; không gộp nhiều
+  vòng vào một file; rerun cùng round sau khi bị cancel → **ghi đè**, không tạo file trùng.
 - Nếu subagent không ghi được report vì permission/runtime, primary phải persist nguyên văn report vào đúng path `.context/review-reports/`.
 
 Bạn KHÔNG được sửa code. Nếu FAIL → trả danh sách lỗi cho builder.

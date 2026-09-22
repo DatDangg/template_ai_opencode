@@ -62,7 +62,7 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 ## Verification Plan
 - Commands: <from `.agent/PROJECT_PROFILE.md` or `skip, no app configured`>
 - Manual/UAT evidence: <if needed>
-- Reviewer report path: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-task-<NN>-review.md`
+- Reviewer report path: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-task-<NN>-round-<R>-review.md`
 
 ## Retry / Error Memory
 - Attempt: 0 | 1 | 2 | 3
@@ -120,7 +120,8 @@ feature (<ADDITIVE|MODIFY|REMOVE>) | bug
 3. Chốt **thứ tự ưu tiên với user**, xử lý **tuần tự**.
 4. Task nhỏ, focused (1–3 files). Acceptance criteria **testable**, không mơ hồ.
 5. Không nhảy phase: schema → API → UI → integration → UAT.
-6. Không sửa tay task sau khi đã chạy — tạo task mới nếu cần.
+6. Không sửa tay task sau khi đã chạy — tạo task mới nếu cần. **WIP/checkpoint ghi ở
+   `.context/runs/<type>-<slug>-<phaseTask>.md`** (xem `AGENTS.md` § Session Handoff), không nhét vào task file.
 7. `tasks/bug-<slug>/scan.md` sinh bởi `/bug-check` là **read-only report** — không sửa code,
    không phải task; user chọn defect xong mới tạo task `/bug` cho từng defect.
 8. Mọi task bug/feature/update phải có `Classification / Risk`, `Retry / Error Memory`,

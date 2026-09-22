@@ -290,9 +290,10 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 - Bug task phải có `Repro Verification`; feature/update task phải có `Feature Verification`.
 
 ### Review report
-- Task reviewer report phải đúng tên: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-task-<NN>-review.md`.
-- Phase-level/spec-validator report khi hết phase: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-review.md`.
+- Task reviewer report phải đúng tên: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-task-<NN>-round-<R>-review.md`.
+- Phase-level/spec-validator report khi hết phase: `.context/review-reports/<feature|bug>-<slug>-phase-<N>-round-<R>-review.md` (kèm hậu tố `-spec` nếu là spec-validator).
 - Pre-plan spec validation (trước khi chia phase/task): `.context/review-reports/feature-<slug>-spec-validation.md`.
+- Quy tắc `round-<R>`: luôn ghi rõ vòng (1, 2, …); không gộp nhiều vòng vào một file; rerun cùng round sau khi bị cancel → **ghi đè** (không tạo file trùng).
 - Trước khi set status `done`: kiểm tra report tồn tại bằng slug/path. Không có report → **KHÔNG đóng việc**.
 
 ## 6. Cổng chặn (gates)
@@ -320,8 +321,8 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 - **UI**: responsive 375/768/1280; a11y; đo contrast; không slop (skills UI).
 - **Progress bắt buộc**: mọi thay đổi trạng thái bug/feature → update `.context/progress.json`.
 - **Close-out report gate**: trước status `done`, grep/check `.context/review-reports/` theo slug và đúng tên
-  `<feature|bug>-<slug>-phase-<N>-task-<NN>-review.md` cho task review; phase/spec-validator review dùng
-  `<feature|bug>-<slug>-phase-<N>-review.md`. Với feature, kiểm tra thêm report pre-plan
+  `<feature|bug>-<slug>-phase-<N>-task-<NN>-round-<R>-review.md` cho task review; phase/spec-validator review dùng
+  `<feature|bug>-<slug>-phase-<N>-round-<R>-review.md`. Với feature, kiểm tra thêm report pre-plan
   `feature-<slug>-spec-validation.md`. Không có report → status `blocked`, không commit/push.
 - **Commit gate**: sau Reviewer PASS + Doc Impact/Reconcile + report gate, set progress/task status `done`
   như một phần của close-out commit. Trước final response, HEAD commit phải tồn tại và bao gồm trạng thái
@@ -347,6 +348,46 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
 - Bash bị permission deny → **DỪNG NGAY**: không retry, không đổi biến thể, không vòng qua pipeline;
   chuyển Grep/Read hoặc ghi `Blocked`.
 - Không xác minh được → ghi `Residual risk`/`Blocked`, không lặp tool.
+
+### Session handoff & resume (Run Journal)
+
+- **Artifact:** `.context/runs/<type>-<slug>-<phaseTask>.md` (template `.context/runs/_TEMPLATE.md`).
+  Primary ghi; subagent không ghi. WIP/checkpoint **KHÔNG** ghi vào task file.
+- **Luật đầy đủ:** `AGENTS.md` § Session Handoff (write-ahead checkpoint, banner, Session Start Protocol).
+- **Resume matrix** (journal `step`/`status` → việc session mới làm):
+
+  | Cancel ở | journal | Session mới làm |
+  |---|---|---|
+  | giữa builder | `builder` / `running` | **redo builder** (read-before-write, không revert) |
+  | sau builder, trước reviewer | `builder` / `awaiting` | **bỏ builder → chạy reviewer** |
+  | giữa reviewer | `reviewer` / `running` | **rerun reviewer** (dọn report dở) |
+  | sau reviewer | `reviewer` / `awaiting` | bước kế: `fix` \| `spec_validator` \| `closeout` \| phase sau |
+  | giữa `fix` | `fix` / `running` | **redo builder ở chế độ fix** (đọc finding trong report trước) |
+  | giữa `spec_validator` | `spec_validator` / `running` | **rerun spec_validator** |
+  | giữa `closeout` | `closeout` / `running` | **idempotent close-out** (xem dưới) |
+
+- **Guardrail redo** (bắt buộc khi redo bất kỳ bước):
+  - Scope theo `filesTouched`/`filesNew` trong journal — **không revert toàn cục**
+    (`checkout --`/`reset --hard` bị deny).
+  - Reviewer: **dọn/ghi đè report dở** trước khi rerun.
+  - Builder: check side-effect đã lỡ chạy — migration file đã tạo (không tạo lại), generate client,
+    test DB local, process/port còn treo.
+  - `interrupted ≠ failed attempt` — redo do cancel **không** tăng `attempt`.
+
+- **Close-out idempotent** (tránh double-commit khi cancel giữa close-out):
+  1. journal `closeout` / `running`.
+  2. Cập nhật `.context/progress.json` (status/phase/task/verdict) — **TRƯỚC** commit,
+     để pointer không stale nếu bị cancel giữa chừng.
+  3. `git log --oneline` kiểm task đã có commit chưa:
+     - chưa có → commit (stage **đúng** file thuộc task) → push theo branch model (§2.8: chỉ khi
+       user yêu cầu rõ hoặc `auto_commit_after_pass: true`) → 4.
+     - đã có commit nhưng chưa push → `push` nếu được phép (§2.8) (**không** commit lại) → 4.
+  4. journal `done`.
+
+- **Nguyên tắc:** đĩa là sự thật, pointer (`progress.json`) chỉ là hint; `interrupted ≠ failed attempt`.
+- **Report path:** journal lưu `evidence.reportPath` **chính xác** — resume không parse tên file report.
+- **Usage gate:** `.context/session-policy.json` (`usageGate`); ở mỗi checkpoint gọi tool `usage()`,
+  vượt ngưỡng thì hỏi user End/Làm tiếp (xem `AGENTS.md` § Session Handoff).
 
 ### Check commands
 Lấy từ `.agent/PROJECT_PROFILE.md` → các field `web_typecheck_command`, `web_lint_command`,
