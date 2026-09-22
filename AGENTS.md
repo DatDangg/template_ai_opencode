@@ -25,13 +25,14 @@ file or `.agent/FEATURE_WORKFLOW.md`, follow **this file**. Legacy files carry a
 
 Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 
-### Phân biệt 3 command
+### Phân biệt command
 
 | Command | Dùng khi | Tính chất |
 |---|---|---|
 | `/bug-check` | Khu vực/màn mơ hồ, "cảm giác nhiều lỗi" | **READ-ONLY** — soi, liệt kê defect vào `tasks/bug-<slug>/scan.md`, **dừng chờ user chọn**. Không sửa, không commit. |
 | `/bug` | **Một bug đã biết** hoặc list bug đã xác nhận | Diagnose root cause → task → builder → reviewer → progress → commit-first → push theo branch model nếu được phép |
 | `/feature` | Thêm/sửa/bỏ tính năng | Classify ADDITIVE/MODIFY/REMOVE → spec delta → phase/task → builder/reviewer/spec-validator → progress |
+| `/resume` | Mở session mới **làm tiếp** việc đang dở | Đọc Run Journal → reconcile đĩa → thực hiện `next`. **KHÔNG** classify/phase-plan lại (§ Session Handoff) |
 
 ---
 
@@ -120,6 +121,8 @@ Code ≠ intent → ghi gap vào gap register (nếu có, vd `docs/changes/TECHN
   `staging_db` phải khác `prod_db`; không sync data staging→prod.
 - **Model mạnh (`builder-strong`) chỉ dùng khi user yêu cầu rõ** — không tự chọn theo độ khó.
 - Xong việc → không tự chạy phase/task tiếp theo khi chưa qua **human checkpoint**.
+- **Session handoff**: dừng ở ranh giới step → ghi Run Journal (write-ahead); session mới resume qua
+  `/resume` (xem § Session Handoff) — **đĩa là sự thật**, pointer là hint.
 
 ## Tool Loop Guard
 
@@ -129,6 +132,47 @@ Code ≠ intent → ghi gap vào gap register (nếu có, vd `docs/changes/TECHN
 - Bash bị permission deny → **DỪNG NGAY**: không retry, không đổi biến thể, không vòng qua pipeline;
   chuyển Grep/Read hoặc ghi `Blocked`.
 - Không xác minh được → ghi `Residual risk`/`Blocked`, không lặp tool.
+
+## Session Handoff (Run Journal)
+
+Mục tiêu: **dừng ở bất kỳ ranh giới step, mở session mới làm tiếp** — không mất code, không lạc step,
+worst case **redo đúng 1 step**. Resume là **tái dựng** từ artifact, **không** phải nối tiếp lossless.
+
+**Artifact:** `.context/runs/<type>-<slug>-<phaseTask>.md` (template: `.context/runs/_TEMPLATE.md`).
+Primary ghi journal; **subagent không ghi**.
+
+**Write-ahead checkpoint (bắt buộc):**
+1. TRƯỚC khi gọi subagent: ghi `step=<bước>, status=running`, snapshot `filesTouched`/`filesNew`
+   từ `git status --short`, in `▶ START <bước> <phaseTask>`.
+2. SAU khi subagent trả về: ghi `status=awaiting`, `evidence`, `next`, cập nhật manifest,
+   **rồi mới** in `✅ DONE <bước> <phaseTask>`. Ghi journal **TRƯỚC** khi in `✅ DONE`.
+3. `✅ DONE` là **điểm dừng an toàn**. `▶ START ... running` mà cancel → session sau **redo bước đó**.
+
+**Banner:** mỗi checkpoint in `▶ START` / `✅ DONE` kèm `phaseTask` + `next`; khi `status=running`
+ghi rõ "cancel sẽ redo bước này".
+
+**Session Start Protocol (đầu mỗi session):**
+1. Đọc journal của `activeWorkItem` trong `.context/progress.json` (không có journal → coi pointer là hint).
+2. Reconcile với đĩa: `git status --short` (so manifest → file lạ = nhiễm chéo), `git log --oneline`
+   (task đã commit chưa), `evidence.reportPath` (reviewer đã chạy chưa, round mấy).
+3. In **Resume Briefing**: workItem, step, dirty files vs manifest, evidence, `next` → rồi mới làm.
+4. **Đĩa là sự thật, pointer là hint.** Lệch → theo đĩa; bước mơ hồ → redo bước đó.
+
+**Redo policy:** cắt ngang `builder`/`reviewer` → **redo nguyên bước**. Redo là chạy lại **trên đĩa**
+(đọc file + `git diff` trước khi sửa), **không revert** (`git checkout --` / `reset --hard` bị deny).
+Dọn report dở trước khi rerun reviewer.
+**`interrupted ≠ failed attempt`** — redo do cancel **KHÔNG** tăng `attempt`.
+
+**Loop signal:** thấy cùng lỗi lặp ≥ 2 lần → ghi `loopSignal` vào journal + escalate
+`architecture_review_needed`, không tự redo vô hạn.
+
+**Sau auto-compact:** phải **re-read journal** từ đĩa, không tin trí nhớ tóm tắt.
+
+**Usage gate (safe-point theo ngưỡng):** policy ở `.context/session-policy.json`
+(`usageGate: {enabled, threshold, minStepsLeft, hardThreshold}`). Ở mỗi checkpoint, gọi tool `usage()`
+(plugin `loop-guard`); nếu `percent ≥ threshold` **và** còn ≥ `minStepsLeft` bước (hoặc `percent ≥ hardThreshold`)
+→ hỏi user bằng `question` tool: `[End — mở session mới] / [Làm tiếp] / [Tiếp, đừng hỏi tới hardThreshold]`.
+Chọn End → in Resume Briefing + dòng `/resume <type>/<slug>` để copy sang session mới, rồi dừng turn.
 
 ## Local skills
 

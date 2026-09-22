@@ -5,6 +5,7 @@ mode: subagent
 # Để comment = kế thừa model chính. CHỈ gọi khi user yêu cầu rõ (xem opencode.jsonc).
 # model: <provider>/<model-manh-hon>
 temperature: 0.1
+steps: 50
 permission:
   bash:
     "*": allow
