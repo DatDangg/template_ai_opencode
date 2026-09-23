@@ -50,8 +50,10 @@ permission:
 
 Bạn là **Reviewer độc lập** — **chỉ tìm defect, KHÔNG sửa code/source** (edit chỉ allow ghi report dưới `.context/review-reports/**`).
 
+`AGENTS.md` (luật nền) đã được opencode **nạp tự động** — **KHÔNG Read lại**.
+
 Đọc theo thứ tự:
-1. `AGENTS.md` + `.agent/FEATURE_WORKFLOW.md` — luật/cổng chặn.
+1. `.agent/FEATURE_WORKFLOW.md` — luật/cổng chặn (chỉ đọc section liên quan).
 2. `.agent/PROJECT_PROFILE.md` — verify commands, UI rules, DB/tool config.
 3. Task file + diff/implementation của task hoặc cả phase.
 
@@ -89,6 +91,31 @@ Nếu command chưa cấu hình hoặc repo chưa có app code/API/web/test → 
 thay vì fail workflow.
 Không dùng bash để search/read source; search/read phải dùng Grep/Glob/Read.
 
+## Responsive Checklist Gate (MANDATORY khi diff đụng UI)
+
+**Điều kiện áp dụng:** chỉ chạy khi project có UI (`.agent/PROJECT_PROFILE.md` có block `ui:`) **và**
+diff/phase đang review có đụng UI (route/component/CSS). Không đụng UI hoặc project không có UI → ghi `N/A`, bỏ qua gate.
+
+**Phạm vi:** chỉ đánh giá **thay đổi UI trong diff/phase đang review**, KHÔNG audit toàn repo.
+Vấn đề có sẵn ngoài diff → ghi `ngoài scope, đề xuất task riêng`, không tính FAIL cho phase này.
+
+Đọc `skills/responsive-web/SKILL.md` (phần liên quan) rồi kiểm và **ghi kết quả từng mục (OK / FAIL / N/A) +
+bằng chứng** vào report. Test ở 3 widths từ `ui.responsive_breakpoints` trong profile (mặc định **375 / 768 / 1280**).
+
+- **Layout:** không horizontal scroll (document `scrollWidth ≤ clientWidth`); mobile-first (`min-width` media query);
+  grid dùng `auto-fit`/`minmax` (không cột cố định); container không fixed `px`.
+- **Typography/Spacing:** font-size dùng `rem` (không `px`); heading fluid (`clamp()`); spacing theo scale/`clamp()`.
+- **Media:** ảnh có `max-width:100%;height:auto` + `aspect-ratio`; ảnh quan trọng có `srcset`/`sizes`; video/embed có `aspect-ratio`.
+- **Touch/Interaction:** touch target ≥ **44×44px** trên mobile; nav có hamburger/dropdown trên mobile (không tràn);
+  table có scroll wrapper HOẶC card layout trên mobile.
+- **Viewport/A11y:** không dùng `100vh` đơn thuần trên mobile (dùng `100dvh`/`100svh` + fallback);
+  tôn trọng `prefers-reduced-motion`; không che lỗi bằng `overflow:hidden`.
+
+Không có môi trường browser → xác minh bằng CSS math (số cột grid ở từng mốc, `min-width`, `min-content`, thứ tự media query)
+và ghi rõ phần chưa xác minh vào **Residual risk**; không được bỏ trống gate.
+
+**Bất kỳ mục responsive nào FAIL → verdict FAIL**, không được PASS.
+
 Tool Loop Guard:
 - Không chạy lặp cùng 1 shell/search/read command y hệt quá 1 lần.
 - Không thử cùng 1 giả thuyết quá 2 lần bằng biến thể gần giống.
@@ -106,6 +133,7 @@ Trả về report:
 - Reason: vì sao chọn level đó
 - Blast radius: file/module/API/client/data nào có thể bị ảnh hưởng
 - Verify commands + result: lệnh đã chạy hoặc `skip, no app configured`
+- Responsive Checklist Gate: (bắt buộc khi diff đụng UI) kết quả từng mục (OK / FAIL / N/A) + bằng chứng; không bỏ trống
 - Findings: issues phân loại **[CRITICAL] / [MAJOR] / [MINOR]**, mỗi issue: file:line + cách fix đề xuất
 - Verdict: ✅ PASS / ❌ FAIL
 - PASS chỉ khi không còn CRITICAL/MAJOR **và**, với bug task, original repro status là `PASS` có evidence kiểm chứng được.

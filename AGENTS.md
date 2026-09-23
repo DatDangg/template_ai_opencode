@@ -68,7 +68,7 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 ## Commit-First Tracking
 
 - Sau khi task/bug/phase PASS review + close-out + cập nhật `.context/progress.json`, phải commit lên branch hiện tại.
-- Branch model mặc định là **staging-direct**: current branch phải là `target_branch`, commit ở đó và auto-push bằng `git push origin <target_branch>`; nếu user yêu cầu feature branch thì push chính current branch (`git push origin <current-branch>`) và chỉ mở PR khi user yêu cầu rõ.
+- Branch model mặc định là **staging-direct**: current branch phải là `target_branch`, commit ở đó; **push không tự động** — chỉ `git push origin <target_branch>` khi user yêu cầu rõ hoặc `auto_commit_after_pass: true` (xem § Non-negotiables). Nếu user yêu cầu feature branch thì push chính current branch (`git push origin <current-branch>`) và chỉ mở PR khi user yêu cầu rõ.
 - **1 task = 1 commit**, trừ khi có lý do rõ ràng.
 - Commit là source of truth cho changed files, timestamp, SHA, rollback point.
 - Task file là source of truth cho root cause, repro/evidence, residual risk, doc impact/reconcile, verification summary.
@@ -132,6 +132,10 @@ Code ≠ intent → ghi gap vào gap register (nếu có, vd `docs/changes/TECHN
 - Bash bị permission deny → **DỪNG NGAY**: không retry, không đổi biến thể, không vòng qua pipeline;
   chuyển Grep/Read hoặc ghi `Blocked`.
 - Không xác minh được → ghi `Residual risk`/`Blocked`, không lặp tool.
+- **Chi phí subagent `explore`:** chỉ spawn `explore` khi root cause **chưa xác định**. Đã có
+  `file:line`/root cause chứng minh (từ `/bug-check`, journal, repro, hoặc check đơn giản) → **cấm spawn
+  `explore`**; tự `Read` đúng vị trí và truyền thẳng `file:line` cho Builder. Chưa chắc root cause → tối đa
+  **1 lần** cho mỗi điều tra. Lý do: mỗi subagent là session riêng, tự đọc lại context từ đầu, không share cache.
 
 ## Session Handoff (Run Journal)
 
