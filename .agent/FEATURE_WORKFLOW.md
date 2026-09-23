@@ -432,6 +432,10 @@ không fail workflow và không tự hardcode lệnh.
   (builder == reviewer, mất tác dụng tránh bias). Khi cần, chạy lại `0.5.C` rồi restart.
 - `reviewer` / `spec-validator` không được sửa source; chỉ được ghi report scoped khi đang review.
 - Chạy dạng **subagent** → context sạch, không thừa hưởng completion report của builder.
+- **`explore` (built-in)**: subagent kế thừa model/variant của session cha. Nếu cha chạy variant `high`,
+  `explore` cũng tốn variant `high` → set override `agent.explore` trong `opencode.jsonc`
+  (`model` rẻ hơn + `variant: low`) để tránh đốt reasoning token. Đi kèm rule chống spawn `explore`
+  thừa ở `AGENTS.md` § Tool Loop Guard.
 
 ### Luật opt-in `builder-strong`
 - **CHỈ dùng khi user yêu cầu rõ.** Không tự chọn theo phán đoán "bài này khó".
