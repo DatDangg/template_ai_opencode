@@ -6,7 +6,7 @@
 // Usage: node scripts/generate-inventory.mjs
 //        <package_manager> docs:inventory   (khi package.json đã có script này)
 
-import { readFileSync, writeFileSync, readdirSync, statSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join, relative, extname, sep } from "node:path";
 

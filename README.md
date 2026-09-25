@@ -414,9 +414,11 @@ git clone <template-repo-url> template && cd template
 # 2. Mở opencode
 opencode
 
-# 3. Trong opencode, chạy /setup-profile để auto-detect stack + hỏi branch/DB,
-#    ghi .agent/PROJECT_PROFILE.md và sync quyền verify command.
-#    Hoặc điền tay: target_branch, forbidden_branch, auto_commit_after_pass,
+# 3. Trong opencode, chạy /setup-profile để auto-detect stack rồi sửa profile THEO NHÓM
+#    (Git & branch / Stack & source / Verify commands / Database & migration):
+#    chọn nhóm → sửa cả nhóm → chọn tiếp hoặc dừng, ghi .agent/PROJECT_PROFILE.md
+#    và sync quyền verify command khi chọn "Xong".
+#    Hoặc điền tay: target_branch, forbidden_branch, auto_push_after_pass,
 #    package_manager, verify commands, db_tool, migration_required.
 
 # 4. Khai model theo vai trong .agent/PROJECT_PROFILE.md (models:) rồi BỎ COMMENT
@@ -427,7 +429,7 @@ opencode
 
 | Command | Khi nào dùng |
 |---|---|
-| `/setup-profile` | Onboarding repo thật — auto-detect stack, hỏi branch/DB, ghi `.agent/PROJECT_PROFILE.md`, sync quyền verify command |
+| `/setup-profile` | Onboarding repo thật — auto-detect stack, sửa profile **theo nhóm** (chọn nhóm → sửa cả nhóm → chọn tiếp/dừng), ghi `.agent/PROJECT_PROFILE.md`, sync quyền verify command |
 | `/bug-check <khu vực>` | Chưa rõ bug nào — soi **read-only**, liệt kê defect vào `tasks/bug-<slug>/scan.md`, dừng chờ bạn chọn |
 | `/bug <mô tả>` | **Một bug đã biết** hoặc list bug đã xác nhận — root cause → build → reviewer → progress → commit-first → push theo branch model nếu được phép |
 | `/feature <mô tả>` | Thêm/sửa/bỏ tính năng — classify → spec delta → phase/task → build/review/validate |

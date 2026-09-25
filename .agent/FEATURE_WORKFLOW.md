@@ -117,7 +117,7 @@ Chỉ bỏ checkpoint nếu prompt có đúng một trong các cụm: `auto proc
   ```
 - Branch model: default **staging-direct** nghĩa là commit trên current branch khi current branch = `target_branch` và push bằng `git push origin <target_branch>`; nếu user yêu cầu feature branch thì commit/push chính current feature branch bằng `git push origin <current-branch>` và chỉ mở PR khi user yêu cầu rõ.
 - Tuyệt đối không push `forbidden_branch`; không `--force`/`-f` (đã chặn ở `opencode.jsonc`).
-- Push chỉ khi user yêu cầu rõ hoặc `auto_commit_after_pass: true` trong `.agent/PROJECT_PROFILE.md`; Reviewer FAIL / progress chưa xong → **không** commit/push.
+- Push chỉ khi user yêu cầu rõ hoặc `auto_push_after_pass: true` trong `.agent/PROJECT_PROFILE.md`; Reviewer FAIL / progress chưa xong → **không** commit/push.
 - Không hardcode tên branch — luôn đọc từ profile.
 
 ### 2.9 Nhánh "bug đã biết" = 1 bug
@@ -319,7 +319,7 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
   **Cấm push `forbidden_branch`**, cấm `--force`/`-f` (gate ở `opencode.jsonc` → `permission.bash`).
 - **Commit-first close-out**: sau task/bug/phase PASS review + Doc Impact/Reconcile + progress xong,
   commit lên branch hiện tại theo §2.8. FAIL → không commit/push.
-- **Push**: mặc định không. Chỉ khi user yêu cầu rõ hoặc `auto_commit_after_pass: true`
+- **Push**: mặc định không. Chỉ khi user yêu cầu rõ hoặc `auto_push_after_pass: true`
   (`.agent/PROJECT_PROFILE.md`), theo branch model ở §2.8/§6.
 - **Commit hygiene**: trước commit phải `git status` + `git diff`; chỉ stage file thuộc task;
   không stage dirty cũ ngoài scope. Nếu shared file interleave nhiều scope khiến tách commit không an toàn,
@@ -397,7 +397,7 @@ Khi có work item, có thể mở rộng trong `features[]` / `bugs[]`:
      để pointer không stale nếu bị cancel giữa chừng.
   3. `git log --oneline` kiểm task đã có commit chưa:
      - chưa có → commit (stage **đúng** file thuộc task) → push theo branch model (§2.8: chỉ khi
-       user yêu cầu rõ hoặc `auto_commit_after_pass: true`) → 4.
+       user yêu cầu rõ hoặc `auto_push_after_pass: true`) → 4.
      - đã có commit nhưng chưa push → `push` nếu được phép (§2.8) (**không** commit lại) → 4.
   4. journal `done`.
 

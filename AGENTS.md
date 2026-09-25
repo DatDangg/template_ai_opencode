@@ -68,7 +68,7 @@ Không rõ intent → hỏi 1 câu ngắn để phân loại, đừng đoán.
 ## Commit-First Tracking
 
 - Sau khi task/bug/phase PASS review + close-out + cập nhật `.context/progress.json`, phải commit lên branch hiện tại.
-- Branch model mặc định là **staging-direct**: current branch phải là `target_branch`, commit ở đó; **push không tự động** — chỉ `git push origin <target_branch>` khi user yêu cầu rõ hoặc `auto_commit_after_pass: true` (xem § Non-negotiables). Nếu user yêu cầu feature branch thì push chính current branch (`git push origin <current-branch>`) và chỉ mở PR khi user yêu cầu rõ.
+- Branch model mặc định là **staging-direct**: current branch phải là `target_branch`, commit ở đó; **push không tự động** — chỉ `git push origin <target_branch>` khi user yêu cầu rõ hoặc `auto_push_after_pass: true` (xem § Non-negotiables). Nếu user yêu cầu feature branch thì push chính current branch (`git push origin <current-branch>`) và chỉ mở PR khi user yêu cầu rõ.
 - **1 task = 1 commit**, trừ khi có lý do rõ ràng.
 - Commit là source of truth cho changed files, timestamp, SHA, rollback point.
 - Task file là source of truth cho root cause, repro/evidence, residual risk, doc impact/reconcile, verification summary.
@@ -101,7 +101,7 @@ Code ≠ intent → ghi gap vào gap register (nếu có, vd `docs/changes/TECHN
 
 ## Non-negotiables (mọi route)
 
-- **Commit** sau PASS theo Commit-First Tracking. `auto_commit_after_pass: true` chỉ cho phép auto-push
+- **Commit** sau PASS theo Commit-First Tracking. `auto_push_after_pass: true` chỉ cho phép auto-push
   `target_branch` sau PASS; **deploy / mở PR luôn cần user yêu cầu rõ**.
 - **Default staging-direct**: chỉ auto-push `target_branch` khi current branch = `target_branch`; nếu user yêu cầu feature branch thì push current branch và PR chỉ khi user yêu cầu rõ. **Cấm push `forbidden_branch`**,
   cấm `--force` / `-f`. Gate cứng ở `opencode.jsonc` (`permission.bash`).

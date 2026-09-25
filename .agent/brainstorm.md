@@ -319,7 +319,7 @@ scripts (`test/lint/typecheck/build`), `db_tool`, `migration_required`.
 **2. Hỏi bắt buộc** (từng câu một):
 1. `target_branch` — branch đích commit/push.
 2. `forbidden_branch` — mặc định `main`, chỉ confirm.
-3. `auto_commit_after_pass` — `true|false`; đây là **auto-push**, commit sau PASS luôn bắt buộc.
+3. `auto_push_after_pass` — `true|false`; tên cũ `auto_commit_after_pass`. Đây **KHÔNG phải auto-commit** — commit sau PASS luôn bắt buộc; flag chỉ = tự **push** `target_branch` sau PASS.
 
 **3. Confirm detect**: stack, `package_manager`, `source_roots`, verify commands (sửa nếu sai).
 

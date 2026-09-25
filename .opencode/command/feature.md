@@ -43,7 +43,7 @@ Quy tắc bắt buộc:
 12. Sau Reviewer PASS + close-out + progress cập nhật, commit lên branch hiện tại theo commit-first rules
    trong `.agent/FEATURE_WORKFLOW.md` §2.8. Branch model mặc định là **staging-direct**: current branch phải là
    `target_branch`, commit ở đó và push `git push origin <target_branch>` chỉ khi user yêu cầu rõ hoặc
-   `auto_commit_after_pass: true`. Nếu user yêu cầu feature branch thì push chính current branch
+   `auto_push_after_pass: true`. Nếu user yêu cầu feature branch thì push chính current branch
    (`git push origin <current-branch>`) và chỉ mở PR khi user yêu cầu rõ. Cấm push `forbidden_branch`, cấm `--force`/`-f`.
 13. Mỗi failed attempt phải append `.context/error-memory.md` hoặc ghi rõ vì sao không có entry.
 14. Nếu update làm đổi kiến trúc/ownership/scope boundary/API contract/mock-real boundary → append `.context/decisions.md`.

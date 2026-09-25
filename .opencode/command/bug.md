@@ -92,7 +92,7 @@ Quy tắc bắt buộc:
 8. Sau Reviewer PASS + close-out + progress cập nhật, commit lên branch hiện tại theo commit-first rules
    trong `.agent/FEATURE_WORKFLOW.md` §2.8.
 9. Branch model mặc định là **staging-direct**: current branch phải là `target_branch`, commit ở đó và push
-   `git push origin <target_branch>` chỉ khi user yêu cầu rõ hoặc `auto_commit_after_pass: true`. Nếu user yêu cầu
+   `git push origin <target_branch>` chỉ khi user yêu cầu rõ hoặc `auto_push_after_pass: true`. Nếu user yêu cầu
    feature branch thì push chính current branch (`git push origin <current-branch>`) và chỉ mở PR khi user yêu cầu rõ.
    Cấm push `forbidden_branch`, cấm `--force`/`-f`.
    Reviewer FAIL hoặc progress chưa xong → **không** commit/push.

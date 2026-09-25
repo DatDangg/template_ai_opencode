@@ -168,7 +168,7 @@ Deploy production → Health check → Done ✅
 
 ### Phase 6: DevOps (`.agent/devops.md`)
 - Git commit, CI/CD checks after each layer
-- Push ⚠️ **override ở maintenance mode**: chỉ `target_branch`, chỉ khi PASS + `auto_commit_after_pass: true`
+- Push ⚠️ **override ở maintenance mode**: chỉ `target_branch`, chỉ khi PASS + `auto_push_after_pass: true`
 - Final layer only: deploy to staging
 
 > 👀 **HUMAN CHECKPOINT — Before Production Deploy**
