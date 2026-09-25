@@ -242,6 +242,23 @@ Classify → Spec delta → Spec Validator → Phase/Task → Human duyệt plan
 > Không nhảy cóc: schema xong mới API, API xong mới UI, integration xong mới UAT.
 > Task có thể gộp phase nếu thật nhỏ — nhưng phải ghi rõ.
 
+### 4b. Skill gates (bổ trợ, risk-based)
+
+Áp dụng khi diff/phase có code phù hợp; reviewer ghi kết quả từng gate vào report.
+Repo chưa cài tool / không có app code / không áp dụng → ghi `N/A` hoặc `skip <lý do>`, **không** fail workflow oan.
+
+| Skill | Ai chạy | Gate |
+|---|---|---|
+| `skills/anti-slop/SKILL.md` | Builder + Reviewer, task đụng TS/JS | `npx oxlint` (khi repo có oxlint config); error mới → FAIL. Bổ trợ `aislop` (mùi nội dung) bằng mùi kiểu dáng code |
+| `skills/open-code-review/SKILL.md` | Reviewer, task code change | `ocr review`/`ocr delegate`; **CRITICAL** (XSS/SQLi/NPE/thread-safety) → FAIL, ≥3 MAJOR → FAIL. Chưa cài `ocr` → ghi chú, không chặn PASS |
+| `skills/ai-readable-codebase/SKILL.md` | Reviewer mọi phase + Builder khi viết mới | AI-chaos indicators **≥3 → FAIL**; code mới đổi luồng chính phải cập nhật `README.md`/`ARCHITECTURE.md` |
+| `skills/ai-friendly-web/SKILL.md` | Reviewer + DevOps, task/web public-facing | thiếu `llms.txt`/`robots.txt`/`sitemap.xml` hoặc chặn AI crawlers → **MAJOR → FAIL** |
+| `skills/m3e-canvas/SKILL.md` | Builder Phase 3 UI (optional) | sketch screen → prompt lưu `.context/design-spec.md`; **không bắt buộc** mỗi task |
+| `skills/blitzstrike/SKILL.md` | Reviewer Phase 2 STRICT (optional) | pentest live trên môi trường được phép; chỉ finding **STRIKE-validated** mới tính FAIL; chưa cài/không môi trường → bỏ qua |
+
+> Thứ tự ưu tiên khi mâu thuẫn: `impeccable` (craft-floor) > `taste-skill-v2` > `ui-ux-pro-max`;
+> `aislop` (nội dung) + `anti-slop` (kiểu dáng) + `ocr` (bug thật) là 3 lớp bổ trợ, không thay thế nhau.
+
 ---
 
 ## 5. State & paths

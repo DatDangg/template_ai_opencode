@@ -45,6 +45,12 @@ Quy tắc bắt buộc:
 - **Chống over-engineering** — dừng ở giải pháp tối giản nhất work (`skills/ponytail/SKILL.md`).
 - **KHÔNG fix mò** khi chưa có root cause (`skills/superpowers/systematic-debugging.md`).
 - Đọc security skill trước khi code input/auth/DB (`skills/security/*`).
+- Task đụng TS/JS: đọc `skills/anti-slop/SKILL.md`; chạy `npx oxlint` (nếu repo có oxlint config) trước khi bàn giao.
+  Không thêm `as any`/dictionary type "an toàn giả", không `filter().map()`/reduce copy accumulator.
+- Code mới/refactor: tuân `skills/ai-readable-codebase/SKILL.md` — tên self-descriptive, hàm ≤50 dòng,
+  ít indirection (≤3 bước nhảy), comment WHY; cập nhật `README.md`/`ARCHITECTURE.md` khi đổi luồng chính.
+- Cần mockup nhanh cho UI mới (optional): dùng `skills/m3e-canvas/SKILL.md`, lưu prompt vào
+  `.context/design-spec.md` rồi mới code.
 - Đọc `skills/responsive-web/SKILL.md` trước khi sửa bất kỳ UI; tuân thủ responsive checklist
   (375/768/1280, không h-scroll, touch ≥44px, `100dvh`, table scroll/card, ảnh không tràn) trước khi bàn giao.
 - Chạy **đúng verify commands** trong profile trước khi báo xong. Không hardcode `npm`/`pnpm`/Prisma.

@@ -23,37 +23,47 @@
 - [🔒 Security Integration](#-security-integration)
 - [📊 Monitoring Integration](#-monitoring-integration)
 - [⚙️ Workflow Skills Integration](#️-workflow-skills-integration)
+- [Workflow Router (maintenance)](#workflow-router-maintenance)
 - [How It Works](#how-it-works)
 - [Agent Roles](#agent-roles)
-- [Change Requests](#change-requests)
-- [Workflow Router (maintenance)](#workflow-router-maintenance)
+- [docs/ Folder](#docs-folder)
+- [Getting Started (Quickstart maintenance)](#getting-started)
 - [Smoke Test Without App Code](#smoke-test-without-app-code)
-- [Quickstart (maintenance)](#getting-started)
-- [Getting Started](#getting-started)
 - [Agent Models](#agent-models)
 - [Git & CI/CD](#git--cicd)
+- [Change Requests](#change-requests)
+- [License](#license)
 
 ---
 
 ## Overview
 
-This template provides a **multi-agent workflow** for building web applications. Instead of manually managing tasks and phases, specialized AI agents collaborate to take your project from brief to deployment.
+This template provides a **multi-agent workflow** for **maintaining existing repos** (bug / feature / update) — with an optional greenfield pipeline for building from scratch. `AGENTS.md` routes every request; specialized subagents handle build, independent review, spec validation, and close-out.
 
 **Key features:**
-- 📂 **Doc-aware workflow** — drop any project docs into `docs/`, agents auto-detect and skip redundant questions
-- 🤖 **Model-agnostic** — works with any AI tool (Cursor, Opencode, Windsurf, GitHub Copilot)
-- 🔄 **Resumable** — pause and resume anytime, progress is saved in `.context/`
+- 🧭 **Intent router** — `AGENTS.md` classifies every request (bug / sweep / feature / review / research) before any code is touched
+- 🔒 **Bug discipline** — root cause before fix (Iron Law), repro verification, no fix-by-symptom
+- 🧩 **Change Request workflow** — classify ADDITIVE/MODIFY/REMOVE → spec delta → phase/task → build/review/validate
+- 🤖 **Model-agnostic** — works with any AI tool (Cursor, Opencode, Windsurf, GitHub Copilot); roles are real subagents in `.opencode/agent/`
+- 🔍 **Independent review** — reviewer / spec-validator run as separate subagents (`edit: deny`) with different models to reduce bias
+- 💾 **Session handoff** — Run Journal in `.context/runs/` + `/resume`, so a new session continues from the last safe step
 - 🧠 **Error memory** — agents learn from mistakes, avoid repeating them
-- 🔍 **Independent review** — separate model reviews code to eliminate bias
-- 🚀 **Automated DevOps** — git setup, CI/CD, and deployment handled by DevOps agent
-- 📂 **Doc-driven input** — drop existing BRD, Design, API Spec, ERD into `docs/` — agents read and classify automatically
-- 🗜️ **Auto context compaction** — context compressed every 3 tasks and after each layer to prevent context bloat
+- 🚀 **Automated DevOps** — git setup, CI/CD, deployment (greenfield optional)
+- 📚 **Doc-aware input** — drop existing BRD/Design/API Spec/ERD into `docs/`; agents classify and only ask about gaps
 
 ---
 
 ## Architecture
 
-This template combines **4 architectural patterns**:
+**Maintenance mode (default)** splits the workflow into 3 parts:
+
+| Part | File | Role |
+|------|------|------|
+| **Router** | `AGENTS.md` | Classify intent → `/bug-check` · `/bug` · `/feature` · review · research |
+| **Workflow** | `.agent/FEATURE_WORKFLOW.md` | Bug fix-loop, Change Request flow, Phase model 1–5, gates, commit-first |
+| **State** | `.context/progress.json` + `.context/runs/` | Work-item status + Run Journal for cross-session resume |
+
+**Greenfield mode (legacy/optional)** additionally combines **4 architectural patterns**:
 
 | Pattern | Role |
 |---------|------|
@@ -81,11 +91,13 @@ project-template/
 │   │   ├── builder-strong.md     ← Hard task (opt-in only; gated)
 │   │   ├── reviewer.md           ← Independent review (edit: deny)
 │   │   └── spec-validator.md     ← Spec/phase cross-check (edit: deny)
-│   └── command/
-│       ├── setup-profile.md      ← /setup-profile → onboarding repo thật (PROJECT_PROFILE)
-│       ├── bug-check.md          ← /bug-check → read-only sweep, list defects
-│       ├── bug.md                ← /bug  → fix ONE known bug
-│       └── feature.md            ← /feature → Change Request workflow
+│   ├── command/
+│   │   ├── setup-profile.md      ← /setup-profile → onboarding repo thật (PROJECT_PROFILE)
+│   │   ├── bug-check.md          ← /bug-check → read-only sweep, list defects
+│   │   ├── bug.md                ← /bug  → fix ONE known bug
+│   │   ├── feature.md            ← /feature → Change Request workflow
+│   │   └── resume.md             ← /resume → continue from Run Journal (cross-session)
+│   └── plugins/loop-guard.ts     ← Doom-loop guard + usage() gate
 │
 ├── docs/                         ← Drop your project docs here (optional)
 │   ├── INDEX.md                  ← Canonical vs historical classification
@@ -94,7 +106,10 @@ project-template/
 │   ├── API_SPEC.md               ← API overview + pointer (no hand-embedded code)
 │   ├── ERD.md                    ← Schema overview + pointer
 │   ├── PERMISSION.md             ← Roles + guard order (synced from code)
+│   ├── diagrams/                 ← archify diagrams (illustrative, verify vs code)
+│   ├── smoke-tests/              ← MAINTENANCE_TEMPLATE_SMOKE.md (template, no app code)
 │   └── generated/                ← AUTO-GENERATED inventory (do not edit)
+│       └── inventory.md
 │
 ├── scripts/
 │   ├── generate-inventory.mjs         ← Deterministic inventory generator
@@ -104,6 +119,7 @@ project-template/
 ├── .agent/
 │   ├── FEATURE_WORKFLOW.md       ← ✅ Maintenance entry (bug/feature/update)
 │   ├── PROJECT_PROFILE.md        ← ✅ Project values (branch, pm, checks, models)
+│   ├── references/               ← taste-skill-v2.md (anti-slop design reference)
 │   ├── brainstorm.md             ← Gather requirements (doc-aware)
 │   ├── spec-validator.md         ← Validate spec vs docs + brainstorm-log
 │   ├── graph.md                  ← Break work into dependency layers
@@ -145,19 +161,28 @@ project-template/
 │   ├── ui-ux-pro-max/           ← 🧩 Design intelligence (nextlevelbuilder)
 │   ├── scalability-architecture/ ← 📦 OPTIONAL scalability tiers — only when user enables the option
 │   ├── karpathy-guidelines/      ← ✂️ Surgical changes + think before coding (andrej-karpathy-skills)
-│   └── aislop/                   ← 🧹 AI-slop detection gate (scanaislop/aislop, curated) — reviewer chạy aislop scan, score ≥ 80
+│   ├── aislop/                   ← 🧹 AI-slop detection gate (scanaislop/aislop, curated) — reviewer chạy aislop scan, score ≥ 80
+│   ├── anti-slop/                ← 🧬 Oxlint rules chống low-evidence TS/JS (dmmulroy/anti-slop, curated)
+│   ├── open-code-review/         ← 🔍 Alibaba OCR gate (alibaba/open-code-review, curated) — CRITICAL → FAIL
+│   ├── ai-readable-codebase/     ← 🧠 Code cho 2 độc giả (người + AI) — tên rõ, ít indirection, README+ARCHITECTURE
+│   ├── ai-friendly-web/          ← 🌐 Web AI-ready: llms.txt, robots cho AI crawlers, sitemap, JSON-LD, OpenAPI
+│   ├── m3e-canvas/               ← 🖼️ Sketch M3 UI trong browser → vibe prompt (lnkiai/m3e-canvas, curated)
+│   └── blitzstrike/              ← ⚡ MCP pentest toolbelt (shinthink/blitzstrike, curated) — security optional
 │
-├── tasks/                        ← Task files generated by .agent/graph.md
-│   ├── layer-0/                  ← Foundation tasks
-│   ├── layer-1/                  ← Core feature tasks
-│   └── layer-2/                  ← Advanced feature tasks
+├── tasks/                        ← Maintenance task board
+│   ├── README.md                 ← Task file format + rules
+│   ├── feature-<slug>/phase-<N>-task-<NN>.md
+│   └── bug-<slug>/               ← scan.md (/bug-check) + phase-<N>-task-<NN>.md
 │
 ├── .context/
-│   ├── progress.json             ← Current state (resume point)
+│   ├── progress.json             ← Current work-item status (features[] / bugs[])
+│   ├── session-policy.json       ← Usage gate thresholds (loop-guard)
+│   ├── runs/                     ← Run Journal per task (cross-session resume)
+│   │   └── _TEMPLATE.md
 │   ├── decisions.md              ← Architecture decisions log
-│   ├── brainstorm-log.md        ← Full Q&A from brainstorm session
-│   ├── error-memory.md          ← Errors encountered + fixes
-│   └── review-reports/          ← Review agent outputs per layer
+│   ├── brainstorm-log.md         ← Full Q&A from brainstorm session
+│   ├── error-memory.md           ← Errors encountered + fixes
+│   └── review-reports/           ← Reviewer / spec-validator reports
 │
 └── .devops/
     ├── templates/
@@ -224,7 +249,7 @@ Monitor keys/tokens (OTLP endpoint, service name, uptime) are asked and saved in
 
 ## ⚙️ Workflow Skills Integration
 
-The template ships with 4 curated workflow skills (curated from well-known open-source repos — picking the essence, not copying verbatim) to raise code + UI quality throughout the pipeline.
+The template ships with curated workflow skills (curated from well-known open-source repos — picking the essence, not copying verbatim) to raise code + UI quality throughout the pipeline.
 
 ### Skills (`skills/`)
 
@@ -239,14 +264,25 @@ The template ships with 4 curated workflow skills (curated from well-known open-
 | `scalability-architecture/` | curated (in-house) | **OPTIONAL** — scalability tiers (Standard/High-Traffic/Enterprise). Only when the user enables the Scalability Option in brainstorm. Avoids over-engineering: do not apply microservices/sharding/K8s when not needed |
 | `karpathy-guidelines/` | andrej-karpathy-skills (curated) | Loop when editing old code — **surgical changes** (touch only what's needed, no drive-by refactor) + Reviewer when reviewing diffs — **assumption check** (state assumptions, don't silently choose). Complements ponytail (simplicity) + superpowers (goal-driven) |
 | `aislop/` | scanaislop/aislop (curated, MIT) | Reviewer reviews **code changes** — deterministic AI-slop scan (narrative comments, swallowed errors, hidden fallbacks, `as any`, duplication, dead code, todo stubs), score 0-100 ≥80 gate, `fix --safe` mechanical, offline no API key |
+| `anti-slop/` | dmmulroy/anti-slop (curated, MIT) | Builder/Reviewer with TS/JS — **Oxlint rules** chặn low-evidence patterns (no-reduce-accumulator-copy, no-object-parameters, no-unsafe-dictionary-type, type assertion cần safety comment). Chặn ở tầng lint, bổ trợ aislop (mùi nội dung) + OCR (bug thật) |
+| `open-code-review/` | alibaba/open-code-review (curated, Apache-2.0) | Reviewer reviews **code changes** — hybrid deterministic + LLM, comment đúng dòng, ruleset NPE/thread-safety/XSS/SQLi. Delegation mode không cần API key. CRITICAL → FAIL |
+| `ai-readable-codebase/` | curated (in-house) | Builder/Reviewer — code cho 2 độc giả (người + AI): tên self-descriptive, ít indirection, 1 file 1 trách nhiệm, README + ARCHITECTURE bắt buộc. Reviewer check AI-chaos indicators (≥3 → FAIL) |
+| `ai-friendly-web/` | curated (in-house) | Reviewer/DevOps task web public — web AI-ready: `llms.txt`, `robots.txt` cho AI crawlers, `sitemap.xml`, JSON-LD, OpenAPI. Thiếu → MAJOR → FAIL |
+| `m3e-canvas/` | lnkiai/m3e-canvas (curated, MIT) | Design Phase 3 (optional) — sketch M3 UI trong browser → vibe prompt, lưu `.context/design-spec.md`. Bổ trợ ui-ux-pro-max |
+| `blitzstrike/` | shinthink/blitzstrike (curated, MIT) | Reviewer STRICT task nhạy cảm (optional) — MCP pentest (BLITZ → EAGLE-EYE → STRIKE). Chỉ finding STRIKE-validated mới chặn; chưa cài → bỏ qua |
 
-### 5 Mandatory Checkpoints
+### Mandatory Checkpoints
 
 1. **When debugging** (`error-analyzer.md`) → Iron Law: **NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST**. Read `superpowers/systematic-debugging.md` before proposing a fix. ≥3 failed fixes = suspect the architecture, don't try fix #4
 2. **When implementing** (`loop.md`) → TDD test-first (`superpowers/test-driven-development.md`) + ponytail ladder; test fails → write minimal code to pass
 3. **When reviewing UI** (`reviewer.md`) → run craft-floor (`impeccable/SKILL.md`): contrast ≥4.5:1, refuse identical card grids / hero-metric / eyebrow / gradient text / emoji icons + **Frontend Checklist Gate** (`frontend-checklist/SKILL.md`): HTML semantics, a11y, SEO, Core Web Vitals, images, frontend security, privacy — CRITICAL items FAIL → task FAIL
 4. **When designing** (`design.md`) → generate a design system by product type (`ui-ux-pro-max/SKILL.md`), cross-check against taste-skill v2 anti-slop (prefer taste-skill on conflict); for public pages also declare SEO metadata + image strategy (`frontend-checklist/SKILL.md`)
 5. **When reviewing UI** (`reviewer.md`) → run responsive checklist gate (`responsive-web/SKILL.md`) at 375/768/1280px
+6. **When coding TS/JS** (`loop.md` / `builder`) → `anti-slop/SKILL.md`: Oxlint rules chặn low-evidence patterns; reviewer chạy `npx oxlint` cạnh `aislop scan`
+7. **When reviewing code** (`reviewer.md`) → `open-code-review/SKILL.md` (optional): `ocr` CRITICAL finding → FAIL; `ai-readable-codebase/SKILL.md`: AI-chaos indicators ≥3 → FAIL
+8. **When reviewing public web** (`reviewer.md` / DevOps) → `ai-friendly-web/SKILL.md`: thiếu `llms.txt`/`robots.txt`/`sitemap.xml` → MAJOR → FAIL
+9. **When designing a screen** (Phase 3, optional) → `m3e-canvas/SKILL.md` sketch → prompt vào `.context/design-spec.md`
+10. **When reviewing sensitive STRICT task** (optional) → `blitzstrike/SKILL.md`: chỉ finding STRIKE-validated mới chặn; chưa cài → bỏ qua
 
 ---
 
@@ -339,6 +375,17 @@ Done ✅ → Extract patterns → Update common-errors.md
 
 ## Agent Roles
 
+**Maintenance (default)** — real subagents live in `.opencode/agent/` (clean context, `edit: deny` where applicable):
+
+| Agent | File | Description |
+|-------|------|-------------|
+| **Builder** | `.opencode/agent/builder.md` | Implement exactly one task + tests; no scope creep; never commits/pushes |
+| **Builder (strong)** | `.opencode/agent/builder-strong.md` | Same, for hard tasks — **opt-in only**, gated by `permission.task` |
+| **Reviewer** | `.opencode/agent/reviewer.md` | Independent review, risk level FAST/NORMAL/STRICT (`edit: deny`) |
+| **Spec Validator** | `.opencode/agent/spec-validator.md` | Cross-check spec/phase vs requirements (`edit: deny`) |
+
+**Greenfield (legacy/optional)** — prompt-level agents in `.agent/`:
+
 | Agent | File | Description |
 |-------|------|-------------|
 | **Brainstorm** | `.agent/brainstorm.md` | Doc-aware requirements gathering — scans docs/, classifies by content, only asks about gaps |
@@ -384,6 +431,7 @@ opencode
 | `/bug-check <khu vực>` | Chưa rõ bug nào — soi **read-only**, liệt kê defect vào `tasks/bug-<slug>/scan.md`, dừng chờ bạn chọn |
 | `/bug <mô tả>` | **Một bug đã biết** hoặc list bug đã xác nhận — root cause → build → reviewer → progress → commit-first → push theo branch model nếu được phép |
 | `/feature <mô tả>` | Thêm/sửa/bỏ tính năng — classify → spec delta → phase/task → build/review/validate |
+| `/resume <type>/<slug>` | Mở session mới **làm tiếp** việc đang dở — đọc Run Journal + reconcile đĩa rồi chạy bước `next` (không classify/phase-plan lại) |
 
 Nếu repo chưa có app code/API/web/test hoặc verify command chưa cấu hình, workflow ghi `skip, no app configured`
 thay vì tự đoán `npm`, `pnpm`, package name, `apps/`, Prisma, hay test command.
@@ -411,13 +459,14 @@ Checklist smoke-test cho template trống nằm ở `docs/smoke-tests/MAINTENANC
 # "Read AGENT.md and start the project"   (agent hỏi từng câu)
 ```
 
-### Resuming
+### Resuming / Session Handoff
 
 ```
 Read AGENTS.md and resume the project
+# hoặc:  /resume feature/<slug>   /resume bug/<slug>
 ```
 
-Agent đọc `.context/progress.json` (schema maintenance) và tiếp tục từ checkpoint.
+Agent đọc `.context/progress.json` (schema maintenance) + Run Journal `.context/runs/<type>-<slug>-<phaseTask>.md` và tiếp tục từ checkpoint. Run Journal được ghi **write-ahead** ở mỗi ranh giới step (`▶ START` / `✅ DONE`) nên session mới chỉ phải redo tối đa một bước; đĩa là sự thật, pointer chỉ là hint.
 
 ---
 
@@ -434,15 +483,28 @@ The `docs/` folder is where you drop any existing project documentation. The age
 | API Spec | endpoints, request/response schemas, HTTP methods | `docs/API_SPEC.md` |
 | Database Schema (ERD) | table definitions, relationships, indexes | `docs/ERD.md` |
 
-### docs/INDEX.md (optional)
+### docs/INDEX.md (classification)
 
-If you want to skip auto-detection, create `docs/INDEX.md`:
+`docs/INDEX.md` splits docs into **canonical** (source of truth, used to validate) vs **historical**
+(reference only, never blocks). Example entries:
 
 ```markdown
-- PRD_v2.md: business requirements
-- figma-export.md: design reference
-- swagger.yaml: api spec
+## Canonical
+| File | Loại | Ghi chú |
+|------|------|---------|
+| BRD.md | business_requirements | Yêu cầu nghiệp vụ |
+| API_SPEC.md | api_spec | Overview + pointer → code |
+| ERD.md | database_schema | Overview + pointer → migration |
+| PERMISSION.md | business_rules | Roles + guard order (sync từ code) |
+| generated/ | generated | Auto-gen, không sửa tay |
+
+## Historical
+| File | Ghi chú |
+|------|---------|
+| diagrams/ | Diagram minh họa (archify) — verify với code |
 ```
+
+> Không nhúng code/schema tay vào canonical docs — dùng pointer + `docs/generated/`.
 
 ### What Happens
 
@@ -592,7 +654,14 @@ cat ~/.ssh/deploy_key
 
 ## Change Requests
 
-After the project is complete, use **Change Request Agent** for modifications:
+Use `/feature` for any addition/modification/removal after the project exists. The workflow:
+
+1. **Classify** — `ADDITIVE` / `MODIFY` / `REMOVE`
+2. **Spec delta** — what changes vs `SPECIFICATIONS.md` (API/DB/UI affected)
+3. **Spec Validator** — cross-check delta vs spec + docs (report `.context/review-reports/feature-<slug>-spec-validation.md`)
+4. **Phase/task** — `tasks/feature-<slug>/phase-<N>-task-<NN>.md`, human approves the plan
+5. **Build/review/validate** — builder → reviewer per task; spec-validator cross-check at phase close
+6. **Close-out** — doc reconcile → progress → commit (1 task = 1 commit)
 
 | Type | Example |
 |------|---------|
@@ -600,7 +669,7 @@ After the project is complete, use **Change Request Agent** for modifications:
 | **MODIFY** | "Change order status flow" |
 | **REMOVE** | "Remove Stripe payment" |
 
-SPECIFICATIONS.md is automatically versioned on each change.
+Change Request workflow chi tiết: `.agent/FEATURE_WORKFLOW.md` §3. Intent docs (`BRD.md`, business rules) chỉ đổi qua Change Request + user duyệt — không tự sửa cho khớp code.
 
 ---
 
